@@ -1,0 +1,13 @@
+{
+  "name": "local",
+  "owner": {
+    "name": "Emanuel Rodriguez Bedeman"
+  },
+  "plugins": [
+    {
+      "name": "mattpocock-skills",
+      "source": "./",
+      "description": "Matt Pocock's skills bundled into this project"
+    }
+  ]
+}
