@@ -122,5 +122,43 @@ export function Icon({ name, size = 8, color = "#000" }: Props) {
           />
         </Svg>
       );
+
+    case "bar-chart-3":
+      return (
+        <Svg viewBox="0 0 24 24" style={dim}>
+          <Path
+            d="M3 3v18h18"
+            stroke={color}
+            strokeWidth={2.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+          />
+          <Path
+            d="M18 17V9"
+            stroke={color}
+            strokeWidth={2.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+          />
+          <Path
+            d="M13 17V5"
+            stroke={color}
+            strokeWidth={2.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+          />
+          <Path
+            d="M8 17v-3"
+            stroke={color}
+            strokeWidth={2.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+          />
+        </Svg>
+      );
   }
 }

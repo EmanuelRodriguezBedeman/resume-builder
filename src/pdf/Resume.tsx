@@ -1,6 +1,7 @@
 import { Document, Page, StyleSheet } from "@react-pdf/renderer";
 import type { Resume as ResumeType } from "../types.ts";
 import { Header } from "./Header.tsx";
+import { SectionRenderer } from "./sections/index.tsx";
 
 const styles = StyleSheet.create({
   page: {
@@ -18,7 +19,9 @@ export function Resume({ resume }: { resume: ResumeType }) {
     <Document>
       <Page size="A4" style={styles.page}>
         <Header header={resume.header} />
-        {/* Other Section types arrive in the next slice. */}
+        {resume.sections.map((section) => (
+          <SectionRenderer key={section.id} section={section} />
+        ))}
       </Page>
     </Document>
   );
