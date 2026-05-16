@@ -4,7 +4,7 @@ export function App() {
   const [backendStatus, setBackendStatus] = useState<string>("checking…");
 
   useEffect(() => {
-    fetch("/api/health")
+    fetch("/health")
       .then((r) => r.json())
       .then((data: { ok: boolean }) => {
         setBackendStatus(data.ok ? "ok" : "unexpected response");
