@@ -4,6 +4,12 @@ import { readResume, writeResume, type Resume } from "./storage.ts";
 export function createApp(dataFile: string) {
   const app = new Hono();
 
+  app.get("/", (c) =>
+    c.text(
+      "Resume Builder API. Endpoints: GET /health, GET /resume, POST /resume",
+    ),
+  );
+
   app.get("/health", (c) => c.json({ ok: true }));
 
   app.get("/resume", async (c) => {

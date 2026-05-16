@@ -6,7 +6,7 @@ const styles = StyleSheet.create({
   page: {
     paddingTop: 36,
     paddingBottom: 36,
-    paddingHorizontal: 40,
+    paddingHorizontal: 32,
     fontFamily: "Helvetica",
     fontSize: 10,
     color: "#000",
