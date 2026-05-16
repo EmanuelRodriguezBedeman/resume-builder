@@ -1,0 +1,422 @@
+{
+  "schemaVersion": 1,
+  "header": {
+    "name": "Emanuel Rodriguez Bedeman",
+    "items": [
+      {
+        "id": "email",
+        "icon": "mail",
+        "text": "emanuel.rodriguez.bedeman@gmail.com",
+        "href": "mailto:emanuel.rodriguez.bedeman@gmail.com"
+      },
+      {
+        "id": "phone",
+        "icon": "phone",
+        "text": "+5491132418964",
+        "href": "tel:+5491132418964"
+      },
+      {
+        "id": "linkedin",
+        "icon": "linkedin",
+        "text": "linkedin.com/in/emanuel-rodriguez-bedeman",
+        "href": "https://linkedin.com/in/emanuel-rodriguez-bedeman"
+      },
+      {
+        "id": "github",
+        "icon": "github",
+        "text": "github.com/EmanuelRodriguezBedeman",
+        "href": "https://github.com/EmanuelRodriguezBedeman"
+      },
+      {
+        "id": "portfolio",
+        "icon": "link",
+        "text": "emanuelrodriguezbedeman.github.io/Portfolio",
+        "href": "https://emanuelrodriguezbedeman.github.io/Portfolio"
+      },
+      {
+        "id": "location",
+        "icon": "map-pin",
+        "text": "CABA, Argentina"
+      }
+    ]
+  },
+  "sections": [
+    {
+      "id": "experience",
+      "type": "timeline",
+      "title": "Experience",
+      "hidden": false,
+      "items": [
+        {
+          "id": "expert-pericial",
+          "title": "Expert Pericial",
+          "subtitle": "FOUNDER — HEAD OF IT",
+          "dateRange": { "start": "2026-03", "end": null },
+          "description": [
+            {
+              "type": "paragraph",
+              "text": "Founded and lead the IT department of the startup. Responsible for the design, implementation and scaling of: agentic automations, no-code automations (n8n), web development, data analysis, data engineering, and Bitrix24 CRM integration."
+            }
+          ]
+        },
+        {
+          "id": "freelance",
+          "title": "Freelance",
+          "subtitle": "DATA SCIENTIST / DATA ENGINEER",
+          "dateRange": { "start": "2025-09", "end": "2026-03" },
+          "description": [
+            {
+              "type": "bullet",
+              "text": "Delivered data science, data engineering and AI solutions for e-commerce and digital businesses: data pipelines, ML models, analytics dashboards, and LLM-powered applications."
+            },
+            {
+              "type": "bullet",
+              "text": "Built backend services and data APIs (FastAPI, SQLAlchemy, Pydantic, PostgreSQL) to integrate analytics and AI into client platforms."
+            }
+          ]
+        },
+        {
+          "id": "adia-health",
+          "title": "Adia Health",
+          "subtitle": "DATA SCIENTIST & DATA ANALYST",
+          "dateRange": { "start": "2025-03", "end": "2025-09" },
+          "description": [
+            {
+              "type": "bullet",
+              "leadIn": "Clinical Data Analysis & Feature Engineering",
+              "text": "Analyze complex patient clinical histories from multiple data sources (Redshift, Athena) to identify relevant biomarkers and clinical patterns, proposing new features for machine learning models to enhance test recommendation accuracy and business model applications."
+            },
+            {
+              "type": "bullet",
+              "leadIn": "Medical AI Systems Validation",
+              "text": "Leverage clinical expertise to validate and optimize lab test recommendation systems across multiple architectures including rule-based systems, LLMs and Knowledge Graphs ensuring medical accuracy and clinical relevance."
+            },
+            {
+              "type": "bullet",
+              "leadIn": "Prompt engineering",
+              "text": "Generate medical insights, systematically testing various AI systems to extract previously uncaptured patient information including diagnoses, conditions, and syndromes not identified by existing NLP systems."
+            },
+            {
+              "type": "bullet",
+              "leadIn": "Medical Ontology Implementation",
+              "text": "Apply expertise in medical ontologies to structure healthcare data and drive semantically consistent medical recommendations, ensuring standardized terminology and interoperability across clinical systems."
+            }
+          ]
+        },
+        {
+          "id": "humai",
+          "title": "HumAI",
+          "subtitle": "TUTOR IN THE DATA SCIENCE COURSES:",
+          "dateRange": { "start": "2024-06", "end": "2025-02" },
+          "description": [
+            { "type": "bullet", "text": "Introduction to programming." },
+            { "type": "bullet", "text": "Data Analysis." },
+            { "type": "bullet", "text": "Databases." },
+            { "type": "bullet", "text": "Advanced Python." }
+          ]
+        },
+        {
+          "id": "lab-salud-publica",
+          "title": "Laboratorio de Innovacion Tecnologica en Salud Publica (+Lab)",
+          "subtitle": "DATA SCIENTIST",
+          "dateRange": { "start": "2022-07", "end": "2025-03" },
+          "description": [
+            {
+              "type": "bullet",
+              "leadIn": "Project leader",
+              "text": "\"Epidemiological Dashboard of Dengue in the City of Buenos Aires\", a PDE approved by the Buenos Aires Government. The project aims to analyze dengue cases, identifying regional and age-related patterns to inform data-driven policy decisions, optimize resource allocation, and monitor epidemiological outbreaks and compare it with past-outbreaks."
+            },
+            {
+              "type": "bullet",
+              "leadIn": "Mentor",
+              "text": "Supervised teams at the Datathon event (in collaboration with MIT) in applying advanced statistical analysis and machine learning techniques to perinatal health challenges."
+            },
+            {
+              "type": "bullet",
+              "leadIn": "Data Scientist",
+              "text": "at the \"Analysis of Academic Performance\" project at UBATIC. Utilized exploratory data analysis and developed predictive models. Identified key patterns and factors to inform strategic decisions and enhance student retention"
+            }
+          ]
+        },
+        {
+          "id": "club-municipal-vilo",
+          "title": "Club Municipal de Vicente Lopez (VILO)",
+          "subtitle": "MEDICAL DOCTOR",
+          "dateRange": { "start": "2024-11", "end": "2025-03" },
+          "description": [
+            {
+              "type": "bullet",
+              "text": "Physician in charge of medical examinations and first aid."
+            }
+          ]
+        },
+        {
+          "id": "racing-club",
+          "title": "Racing Club de Avellaneda",
+          "subtitle": "MEDICAL DOCTOR",
+          "dateRange": { "start": "2024-08", "end": "2025-04" },
+          "description": [
+            {
+              "type": "bullet",
+              "text": "Team Physician and First Aid Officer for Hockey Players and all individuals within the premises"
+            }
+          ]
+        },
+        {
+          "id": "clinica-metro-del-sur",
+          "title": "Clinica Medicina Laboral \"Metro del sur\"",
+          "subtitle": "OCCUPATIONAL HEALTH PHYSICIAN",
+          "dateRange": { "start": "2024-01", "end": "2024-03" },
+          "description": [
+            {
+              "type": "bullet",
+              "text": "Occupational Health Physician in charge of medical checking the workers from different companies, pre-employment medical examinations and first aid"
+            }
+          ]
+        },
+        {
+          "id": "ceba",
+          "title": "Centro de Epilepsia de Buenos Aires (CEBA)",
+          "subtitle": "ELECTROENCEPHALOGRAPHY TECHNICIAN",
+          "dateRange": { "start": "2013-03", "end": "2019-04" },
+          "description": [
+            {
+              "type": "paragraph",
+              "text": "Managed a diverse client portfolio, logistics, and equipment maintenance, while administering resources and delivering services to top hospitals, including Hospital Militar Central, Sanatorio Mater Dei, and Fundación Favaloro. Completed internships at Hospital Garrahan and Hospital Británico."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "education",
+      "type": "compactGrid",
+      "title": "Education",
+      "hidden": false,
+      "items": [
+        {
+          "id": "edvai",
+          "title": "Escuela de datos vivos (EDVAI)",
+          "subtitle": "DATA ENGINERRING",
+          "date": { "start": "2024-11", "end": "2025-01" }
+        },
+        {
+          "id": "uba",
+          "title": "Universidad de Buenos Aires (UBA)",
+          "subtitle": "MEDICINE",
+          "date": { "start": "2014", "end": "2023" }
+        },
+        {
+          "id": "hospital-britanico",
+          "title": "Hospital Británico",
+          "subtitle": "ELECTROENCEPHALOGRAPHY TECHNICIAN",
+          "date": { "start": "2013-03", "end": "2013-11" }
+        }
+      ]
+    },
+    {
+      "id": "courses",
+      "type": "compactGrid",
+      "title": "Courses",
+      "hidden": false,
+      "items": [
+        {
+          "id": "lomas-jr-data-analyst",
+          "title": "Universidad de Lomas de Zamora",
+          "subtitle": "JR. DATA ANALYST",
+          "date": { "start": "2023-01", "end": "2025-10" }
+        },
+        {
+          "id": "udemy-python3",
+          "title": "Udemy",
+          "subtitle": "CURSO MAESTRO DE PYTHON 3",
+          "date": { "start": "2015", "end": "2023" }
+        },
+        {
+          "id": "udemy-ml",
+          "title": "Udemy",
+          "subtitle": "MACHINE LEARNING: DATA SCIENCE IN PYTHON",
+          "date": { "start": "2021-10" }
+        },
+        {
+          "id": "kaggle-ds",
+          "title": "Kaggle",
+          "subtitle": "DATA SCIENCE & ANALYTICS IN PYTHON",
+          "date": { "start": "2021-12" }
+        }
+      ]
+    },
+    {
+      "id": "skills",
+      "type": "categorizedTags",
+      "title": "Skills",
+      "hidden": false,
+      "items": [
+        {
+          "id": "skills-primary",
+          "category": "Primary",
+          "tags": [
+            "Python",
+            "Numpy",
+            "Pandas",
+            "Seaborn",
+            "Scikit-Learn",
+            "Catboost",
+            "Hadoop",
+            "Google Cloud Platform (GCP)",
+            "AWS",
+            "HadoopHDFS",
+            "Cloud Storage",
+            "Spark",
+            "PySpark",
+            "Dataproc",
+            "Dataflow",
+            "Kafka",
+            "Pub/Sub",
+            "Nifi",
+            "Sqoop",
+            "Hive",
+            "BigQuery",
+            "Airflow",
+            "Cloud Composer",
+            "Looker Studio",
+            "Docker",
+            "Git-Github",
+            "Linux"
+          ]
+        },
+        {
+          "id": "skills-secondary",
+          "category": "Secondary",
+          "tags": ["R", "Node.js", "Tailwind", "Bootstrap", "CSS", "HTML5"]
+        },
+        {
+          "id": "skills-databases",
+          "category": "Databases",
+          "tags": ["PostgreSQL", "MySQL", "SQLite", "MongoDB"]
+        }
+      ]
+    },
+    {
+      "id": "languages",
+      "type": "compactGrid",
+      "title": "Languages",
+      "hidden": false,
+      "items": [
+        {
+          "id": "english",
+          "title": "English",
+          "subtitle": "C1 (ADVANCED)"
+        },
+        {
+          "id": "spanish",
+          "title": "Español",
+          "subtitle": "Native"
+        }
+      ]
+    },
+    {
+      "id": "projects",
+      "type": "showcase",
+      "title": "Projects",
+      "hidden": false,
+      "items": [
+        {
+          "id": "academic-performance",
+          "title": "Academic Performance Analysis & Predictive Model",
+          "techStack": [
+            "Python",
+            "R",
+            "Pandas",
+            "Seaborn",
+            "Scikit-Learn & Catboost"
+          ],
+          "description": [
+            {
+              "type": "paragraph",
+              "text": "By applying advanced statistical analysis and machine learning techniques, I uncovered key patterns and factors contributing to university dropout rates. Findings were progressively shared with other academic institutions and stakeholders, enabling them to develop more effective data-informed policies to address this critical challenge."
+            }
+          ],
+          "links": [
+            { "id": "notebook", "icon": "github", "label": "Notebook", "href": "" },
+            { "id": "paper", "icon": "link", "label": "Paper", "href": "" }
+          ]
+        },
+        {
+          "id": "dengue-dashboard",
+          "title": "Epidemiological Dashboard of Dengue in the City of Buenos Aires",
+          "techStack": ["Looker Studio"],
+          "description": [
+            {
+              "type": "paragraph",
+              "text": "Innovative dashboard providing a unified and up-to-date view of key epidemiological metrics for Dengue disease in Buenos Aires. Connected to automated data sources, this tool offers dynamic and customizable visualizations, detailed analysis by neighborhoods and age groups, and multi-level drill-down capabilities to identify trends and patterns."
+            }
+          ],
+          "links": [
+            { "id": "dashboard", "icon": "bar-chart-3", "label": "Dashboard", "href": "" }
+          ]
+        },
+        {
+          "id": "argentina-flights",
+          "title": "Argentina Flights – Pipeline & Analysis",
+          "techStack": [
+            "Linux",
+            "Hadoop",
+            "HadoopHDFS",
+            "PySpark",
+            "Hive",
+            "Airflow",
+            "PostgreSQL",
+            "Looker Studio"
+          ],
+          "description": [
+            {
+              "type": "paragraph",
+              "text": "Designed and automated a data pipeline to analyze Argentina's flight trends (2021-2022), providing insights into aircraft usage, passenger traffic, and flight activity. Developed a cloud migration strategy for Google Cloud Platform (GCP) to enhance performance, scalability, and cost-effectiveness."
+            }
+          ],
+          "links": [
+            { "id": "repo", "icon": "github", "label": "Repository", "href": "" }
+          ]
+        },
+        {
+          "id": "car-rentals",
+          "title": "Car Rentals - Pipeline & Analysis",
+          "techStack": [
+            "Linux",
+            "Hadoop",
+            "HadoopHDFS",
+            "PySpark",
+            "Hive",
+            "Airflow",
+            "PostgreSQL",
+            "Looker Studio"
+          ],
+          "description": [
+            {
+              "type": "paragraph",
+              "text": "Developed an automated pipeline to generate insights for car rental dashboards, exploring relationships between fuel types, vehicle characteristics, and rental frequencies. Designed a cloud migration strategy for Google Cloud Platform (GCP) to optimize performance, scalability, and infrastructure costs."
+            }
+          ],
+          "links": [
+            { "id": "repo", "icon": "github", "label": "Repository", "href": "" }
+          ]
+        },
+        {
+          "id": "nyc-flights",
+          "title": "New York City Flights",
+          "techStack": ["R"],
+          "description": [
+            {
+              "type": "paragraph",
+              "text": "This data analysis aims to identify the airline with the shortest delay times (both arrival and departure) and the highest frequency of use in New York City, providing insights into the most punctual and frequently used airline."
+            }
+          ],
+          "links": [
+            { "id": "repo", "icon": "github", "label": "Repository", "href": "" }
+          ]
+        }
+      ]
+    }
+  ]
+}
