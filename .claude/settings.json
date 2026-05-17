@@ -7,7 +7,7 @@
     "local": {
       "source": {
         "source": "directory",
-        "path": "."
+        "path": "./claude-skills"
       }
     }
   }

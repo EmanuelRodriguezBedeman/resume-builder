@@ -1,17 +1,8 @@
-Skills are organized into bucket folders under `skills/`:
+# Resume Builder
 
-- `engineering/` — daily code work
-- `productivity/` — daily non-code workflow tools
-- `misc/` — kept around but rarely used
-- `personal/` — tied to my own setup, not promoted
-- `in-progress/` — drafts not yet ready to ship
-- `deprecated/` — no longer used
+Personal web app for editing a CV that mirrors the user's existing PDF format and exports it through React-PDF. See [`CONTEXT.md`](./CONTEXT.md) for the domain glossary and [`docs/adr/`](./docs/adr/) for architectural decisions.
 
-Every skill in `engineering/`, `productivity/`, or `misc/` must have a reference in the top-level `README.md` and an entry in `.claude-plugin/plugin.json`. Skills in `personal/`, `in-progress/`, and `deprecated/` must not appear in either.
-
-Each skill entry in the top-level `README.md` must link the skill name to its `SKILL.md`.
-
-Each bucket folder has a `README.md` that lists every skill in the bucket with a one-line description, with the skill name linked to its `SKILL.md`.
+The `claude-skills/` directory holds Matt Pocock's skill plugin (sourced from `mattpocock/skills` on GitHub), registered as a local marketplace via `.claude/settings.json`. Those files are tooling for Claude Code, not Resume Builder code.
 
 ## Agent skills
 
