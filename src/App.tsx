@@ -1,6 +1,7 @@
 import { useEffect, useMemo, type CSSProperties } from "react";
-import { PDFDownloadLink, PDFViewer } from "@react-pdf/renderer";
+import { PDFDownloadLink } from "@react-pdf/renderer";
 import { Resume } from "./pdf/Resume.tsx";
+import { HtmlPreview } from "./preview/HtmlPreview.tsx";
 import { FormPanel } from "./components/FormPanel.tsx";
 import { Sidebar } from "./components/Sidebar.tsx";
 import { useStore } from "./store.ts";
@@ -77,17 +78,19 @@ export function App() {
 function LoadedApp({ resume }: { resume: ResumeType }) {
   const fileName = `${slugifyName(resume.header.name)}.pdf`;
 
-  // Memoize the Resume element so PDFViewer + PDFDownloadLink only see a
-  // new prop when the resume actually changes (not on every unrelated
-  // re-render of LoadedApp).
-  const document = useMemo(() => <Resume resume={resume} />, [resume]);
+  // Memoize the React-PDF Resume element so the download link only
+  // regenerates its blob when the underlying resume changes.
+  const exportDocument = useMemo(
+    () => <Resume resume={resume} />,
+    [resume],
+  );
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
       <div style={toolbarStyle}>
         <span style={{ color: "#555" }}>Resume Builder</span>
         <PDFDownloadLink
-          document={document}
+          document={exportDocument}
           fileName={fileName}
           style={buttonStyle}
         >
@@ -112,9 +115,7 @@ function LoadedApp({ resume }: { resume: ResumeType }) {
         <Sidebar resume={resume} />
         <FormPanel resume={resume} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <PDFViewer width="100%" height="100%">
-            {document}
-          </PDFViewer>
+          <HtmlPreview resume={resume} />
         </div>
       </div>
     </div>
