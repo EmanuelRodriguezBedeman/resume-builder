@@ -1,17 +1,38 @@
 import type { Resume } from "../../types.ts";
 import { useStore } from "../../store.ts";
-import { withHeaderItem } from "../../updaters.ts";
+import {
+  withHeaderItem,
+  withHeaderItemAdded,
+  withHeaderItemRemoved,
+} from "../../updaters.ts";
 import {
   IconPicker,
   TextField,
   cardStyle,
+  dangerButtonStyle,
   fieldGroupStyle,
   labelStyle,
+  subtleButtonStyle,
 } from "./shared.tsx";
 
 export function HeaderForm({ resume }: { resume: Resume }) {
   const updateHeaderName = useStore((s) => s.updateHeaderName);
   const setResume = useStore((s) => s.setResume);
+
+  function handleAddItem() {
+    const id = `header-item-${Date.now()}`;
+    setResume((r) =>
+      withHeaderItemAdded(r, { id, icon: "link", text: "", href: "" }),
+    );
+  }
+
+  function handleRemoveItem(itemId: string, text: string) {
+    const confirmed = window.confirm(
+      `Remove header item "${text || itemId}"?`,
+    );
+    if (!confirmed) return;
+    setResume((r) => withHeaderItemRemoved(r, itemId));
+  }
 
   return (
     <div>
@@ -28,8 +49,24 @@ export function HeaderForm({ resume }: { resume: Resume }) {
         <label style={labelStyle}>Contact items</label>
         {resume.header.items.map((item) => (
           <div key={item.id} style={cardStyle}>
-            <div style={{ fontSize: "0.78rem", color: "#555", marginBottom: "0.4rem" }}>
-              id: <code>{item.id}</code>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "0.4rem",
+              }}
+            >
+              <span style={{ fontSize: "0.78rem", color: "#555" }}>
+                id: <code>{item.id}</code>
+              </span>
+              <button
+                type="button"
+                onClick={() => handleRemoveItem(item.id, item.text)}
+                style={dangerButtonStyle}
+              >
+                Remove
+              </button>
             </div>
             <IconPicker
               label="Icon"
@@ -51,12 +88,19 @@ export function HeaderForm({ resume }: { resume: Resume }) {
               placeholder="https://… or mailto:…"
               onChange={(href) =>
                 setResume((r) =>
-                  withHeaderItem(r, item.id, href ? { href } : { href: undefined }),
+                  withHeaderItem(
+                    r,
+                    item.id,
+                    href ? { href } : { href: undefined },
+                  ),
                 )
               }
             />
           </div>
         ))}
+        <button type="button" onClick={handleAddItem} style={subtleButtonStyle}>
+          + Add contact item
+        </button>
       </div>
     </div>
   );

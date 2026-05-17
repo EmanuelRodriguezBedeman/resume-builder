@@ -5,7 +5,11 @@ import {
   withCompactGridItem,
   withDescriptionBlock,
   withHeaderItem,
+  withHeaderItemAdded,
+  withHeaderItemRemoved,
   withHeaderName,
+  withItemAdded,
+  withItemRemoved,
   withSectionAdded,
   withSectionRemoved,
   withSectionTitle,
@@ -104,6 +108,79 @@ describe("Section title updater", () => {
     const next = withSectionTitle(baseResume, "exp", "Work History");
     expect(next.sections[0]?.title).toBe("Work History");
     expect(next.sections[1]).toEqual(baseResume.sections[1]);
+  });
+});
+
+describe("Header item add/remove updaters", () => {
+  test("withHeaderItemAdded appends to the items array", () => {
+    const next = withHeaderItemAdded(baseResume, {
+      id: "x",
+      icon: "link",
+      text: "x.com",
+    });
+    expect(next.header.items.length).toBe(baseResume.header.items.length + 1);
+    expect(next.header.items.at(-1)?.id).toBe("x");
+  });
+
+  test("withHeaderItemRemoved drops the matching item only", () => {
+    const next = withHeaderItemRemoved(baseResume, "mail");
+    expect(next.header.items.find((i) => i.id === "mail")).toBeUndefined();
+    expect(next.header.items.find((i) => i.id === "gh")).toBeDefined();
+  });
+});
+
+describe("Item add/remove updaters", () => {
+  test("withItemAdded appends an empty item with the right shape per type", () => {
+    const next = withItemAdded(baseResume, "exp", "new-t");
+    const section = next.sections[0];
+    if (!section || section.type !== "timeline") throw new Error("wrong section");
+    expect(section.items.length).toBe(2);
+    expect(section.items.at(-1)).toEqual({
+      id: "new-t",
+      title: "",
+      subtitle: "",
+      dateRange: { start: "", end: null },
+      description: [],
+    });
+  });
+
+  test("withItemAdded for compactGrid creates a minimal item", () => {
+    const next = withItemAdded(baseResume, "edu", "new-e");
+    const section = next.sections[1];
+    if (!section || section.type !== "compactGrid") throw new Error("wrong section");
+    expect(section.items.at(-1)).toEqual({ id: "new-e", title: "" });
+  });
+
+  test("withItemAdded for showcase creates an empty links/techStack/description", () => {
+    const next = withItemAdded(baseResume, "proj", "new-p");
+    const section = next.sections[2];
+    if (!section || section.type !== "showcase") throw new Error("wrong section");
+    expect(section.items.at(-1)).toEqual({
+      id: "new-p",
+      title: "",
+      techStack: [],
+      description: [],
+      links: [],
+    });
+  });
+
+  test("withItemAdded for categorizedTags creates empty tags", () => {
+    const next = withItemAdded(baseResume, "skills", "new-s");
+    const section = next.sections[3];
+    if (!section || section.type !== "categorizedTags") throw new Error("wrong section");
+    expect(section.items.at(-1)).toEqual({ id: "new-s", category: "", tags: [] });
+  });
+
+  test("withItemRemoved drops only the matching item", () => {
+    const next = withItemRemoved(baseResume, "skills", "s1");
+    const section = next.sections[3];
+    if (!section || section.type !== "categorizedTags") throw new Error("wrong section");
+    expect(section.items.length).toBe(0);
+  });
+
+  test("withItemRemoved is a no-op for unknown id", () => {
+    const next = withItemRemoved(baseResume, "skills", "does-not-exist");
+    expect(next).toEqual(baseResume);
   });
 });
 

@@ -2,6 +2,8 @@ import { useState, type CSSProperties } from "react";
 import type { Resume, Section } from "../types.ts";
 import { useStore, type Selection } from "../store.ts";
 import {
+  withItemAdded,
+  withItemRemoved,
   withSectionAdded,
   withSectionRemoved,
   type AddableSectionType,
@@ -59,7 +61,21 @@ const itemRowStyle = (selected: boolean): CSSProperties => ({
   background: selected ? "#e6f0ff" : "transparent",
   color: selected ? "#0b4cb1" : "#1a1a1a",
   fontWeight: selected ? 600 : 400,
+  justifyContent: "space-between",
 });
+
+const addItemButtonStyle: CSSProperties = {
+  display: "block",
+  marginLeft: "1.5rem",
+  marginTop: "0.2rem",
+  padding: "0.2rem 0.5rem",
+  fontSize: "0.78rem",
+  background: "transparent",
+  border: "1px dashed #aaa",
+  borderRadius: "3px",
+  color: "#555",
+  cursor: "pointer",
+};
 
 const chevronStyle: CSSProperties = {
   display: "inline-block",
@@ -156,6 +172,25 @@ export function Sidebar({ resume }: { resume: Resume }) {
     }
   }
 
+  function handleAddItem(section: Section) {
+    const itemId = `item-${Date.now()}`;
+    setResume((r) => withItemAdded(r, section.id, itemId));
+    selectItem(section.id, itemId);
+  }
+
+  function handleRemoveItem(sectionId: string, itemId: string, label: string) {
+    const confirmed = window.confirm(`Remove "${label}"?`);
+    if (!confirmed) return;
+    setResume((r) => withItemRemoved(r, sectionId, itemId));
+    if (
+      selection.kind === "item" &&
+      selection.sectionId === sectionId &&
+      selection.itemId === itemId
+    ) {
+      useStore.getState().selectNone();
+    }
+  }
+
   return (
     <nav
       style={{
@@ -224,24 +259,53 @@ export function Sidebar({ resume }: { resume: Resume }) {
                 ×
               </button>
             </div>
-            {isExpanded
-              ? section.items.map((item) => {
+            {isExpanded ? (
+              <>
+                {section.items.map((item) => {
                   const itemSelected = isSelected(selection, {
                     kind: "item",
                     sectionId: section.id,
                     itemId: item.id,
                   });
+                  const label = itemLabel(section, item.id);
                   return (
-                    <div
-                      key={item.id}
-                      style={itemRowStyle(itemSelected)}
-                      onClick={() => selectItem(section.id, item.id)}
-                    >
-                      {itemLabel(section, item.id)}
+                    <div key={item.id} style={itemRowStyle(itemSelected)}>
+                      <div
+                        onClick={() => selectItem(section.id, item.id)}
+                        style={{
+                          flex: 1,
+                          minWidth: 0,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {label || <em style={{ color: "#888" }}>untitled</em>}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveItem(section.id, item.id, label || "untitled");
+                        }}
+                        style={deleteButtonStyle}
+                        title="Remove item"
+                        aria-label={`Remove ${label}`}
+                      >
+                        ×
+                      </button>
                     </div>
                   );
-                })
-              : null}
+                })}
+                <button
+                  type="button"
+                  onClick={() => handleAddItem(section)}
+                  style={addItemButtonStyle}
+                >
+                  + Add item
+                </button>
+              </>
+            ) : null}
           </div>
         );
       })}

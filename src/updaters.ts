@@ -58,6 +58,32 @@ export function withHeaderItem(
   };
 }
 
+export function withHeaderItemAdded(
+  resume: Resume,
+  item: HeaderItem,
+): Resume {
+  return {
+    ...resume,
+    header: {
+      ...resume.header,
+      items: [...resume.header.items, item],
+    },
+  };
+}
+
+export function withHeaderItemRemoved(
+  resume: Resume,
+  itemId: string,
+): Resume {
+  return {
+    ...resume,
+    header: {
+      ...resume.header,
+      items: resume.header.items.filter((i) => i.id !== itemId),
+    },
+  };
+}
+
 // -- Section ------------------------------------------------------------
 
 export function withSectionTitle(
@@ -107,6 +133,72 @@ export function withSectionRemoved(
     ...resume,
     sections: resume.sections.filter((s) => s.id !== sectionId),
   };
+}
+
+/** Append an empty item to a section. Shape depends on section type. */
+export function withItemAdded(
+  resume: Resume,
+  sectionId: string,
+  itemId: string,
+): Resume {
+  return mapSection(resume, sectionId, (s) => {
+    switch (s.type) {
+      case "timeline":
+        return {
+          ...s,
+          items: [
+            ...s.items,
+            {
+              id: itemId,
+              title: "",
+              subtitle: "",
+              dateRange: { start: "", end: null },
+              description: [],
+            },
+          ],
+        };
+      case "compactGrid":
+        return { ...s, items: [...s.items, { id: itemId, title: "" }] };
+      case "showcase":
+        return {
+          ...s,
+          items: [
+            ...s.items,
+            {
+              id: itemId,
+              title: "",
+              techStack: [],
+              description: [],
+              links: [],
+            },
+          ],
+        };
+      case "categorizedTags":
+        return {
+          ...s,
+          items: [...s.items, { id: itemId, category: "", tags: [] }],
+        };
+    }
+  });
+}
+
+export function withItemRemoved(
+  resume: Resume,
+  sectionId: string,
+  itemId: string,
+): Resume {
+  return mapSection(resume, sectionId, (s) => {
+    switch (s.type) {
+      case "timeline":
+        return { ...s, items: s.items.filter((i) => i.id !== itemId) };
+      case "compactGrid":
+        return { ...s, items: s.items.filter((i) => i.id !== itemId) };
+      case "showcase":
+        return { ...s, items: s.items.filter((i) => i.id !== itemId) };
+      case "categorizedTags":
+        return { ...s, items: s.items.filter((i) => i.id !== itemId) };
+    }
+  });
 }
 
 // -- Timeline item ------------------------------------------------------

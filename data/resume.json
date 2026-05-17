@@ -520,6 +520,24 @@
           ]
         }
       ]
+    },
+    {
+      "id": "section-1779003792547",
+      "title": "Seccion de prueba",
+      "hidden": false,
+      "type": "timeline",
+      "items": [
+        {
+          "id": "item-1779003832801",
+          "title": "Test",
+          "subtitle": "this a a test #25",
+          "dateRange": {
+            "start": "1994-04",
+            "end": "2005-06"
+          },
+          "description": []
+        }
+      ]
     }
   ]
 }
