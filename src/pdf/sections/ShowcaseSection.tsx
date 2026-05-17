@@ -11,10 +11,10 @@ const MUTED = "#555";
 
 const styles = StyleSheet.create({
   section: {
-    marginBottom: 18,
+    marginBottom: 22,
   },
   item: {
-    marginBottom: 14,
+    marginBottom: 24,
   },
   headRow: {
     flexDirection: "row",

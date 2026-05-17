@@ -5,7 +5,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-end",
     marginTop: 4,
-    marginBottom: 12,
+    marginBottom: 14,
   },
   title: {
     fontFamily: "Helvetica-Bold",

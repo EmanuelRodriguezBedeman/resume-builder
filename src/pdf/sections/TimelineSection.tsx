@@ -4,14 +4,15 @@ import { DescriptionBlocks } from "../DescriptionBlocks.tsx";
 import { SectionHeading } from "../SectionHeading.tsx";
 import { formatDateRange } from "../format.ts";
 
-const MUTED = "#555";
+const DATE_COLOR = "#555";
+const SUBTITLE_COLOR = "#333";
 
 const styles = StyleSheet.create({
   section: {
-    marginBottom: 18,
+    marginBottom: 22,
   },
   item: {
-    marginBottom: 14,
+    marginBottom: 18,
   },
   headRow: {
     flexDirection: "row",
@@ -25,13 +26,13 @@ const styles = StyleSheet.create({
   date: {
     fontFamily: "Helvetica-Oblique",
     fontSize: 9,
-    color: MUTED,
+    color: DATE_COLOR,
   },
   subtitle: {
     fontFamily: "Helvetica-Bold",
     fontSize: 8.5,
     letterSpacing: 0.5,
-    color: MUTED,
+    color: SUBTITLE_COLOR,
     marginTop: 2,
   },
 });

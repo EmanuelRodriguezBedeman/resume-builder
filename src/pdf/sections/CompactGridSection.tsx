@@ -3,11 +3,12 @@ import type { CompactGridSection as CompactGridSectionType } from "../../types.t
 import { SectionHeading } from "../SectionHeading.tsx";
 import { formatFlexibleDate } from "../format.ts";
 
-const MUTED = "#555";
+const DATE_COLOR = "#555";
+const SUBTITLE_COLOR = "#333";
 
 const styles = StyleSheet.create({
   section: {
-    marginBottom: 18,
+    marginBottom: 22,
   },
   grid: {
     flexDirection: "row",
@@ -16,7 +17,7 @@ const styles = StyleSheet.create({
   cell: {
     width: "50%",
     paddingRight: 10,
-    marginBottom: 10,
+    marginBottom: 14,
   },
   headRow: {
     flexDirection: "row",
@@ -30,14 +31,14 @@ const styles = StyleSheet.create({
   date: {
     fontFamily: "Helvetica-Oblique",
     fontSize: 8.5,
-    color: MUTED,
+    color: DATE_COLOR,
     marginLeft: 4,
   },
   subtitle: {
     fontFamily: "Helvetica-Bold",
     fontSize: 8.5,
     letterSpacing: 0.5,
-    color: MUTED,
+    color: SUBTITLE_COLOR,
     marginTop: 2,
   },
 });
@@ -48,7 +49,7 @@ export function CompactGridSection({
   section: CompactGridSectionType;
 }) {
   return (
-    <View style={styles.section}>
+    <View style={styles.section} wrap={false}>
       <SectionHeading title={section.title} />
       <View style={styles.grid}>
         {section.items.map((item) => (
