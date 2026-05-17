@@ -27,7 +27,14 @@ Every edit auto-saves to `data/resume.json` ~500 ms after typing stops, so commi
 
 Node 22+ and npm 10+.
 
-## Install
+## Run locally
+
+### 1. Prerequisites
+
+- **Node 22+** and **npm 10+**. Check with `node --version` and `npm --version`.
+- A modern browser (Chrome, Edge, Firefox).
+
+### 2. Clone and install
 
 ```bash
 git clone https://github.com/EmanuelRodriguezBedeman/resume-builder.git
@@ -35,13 +42,34 @@ cd resume-builder
 npm install
 ```
 
-## Run
+### 3. Start the dev servers
 
 ```bash
 npm run dev
 ```
 
-Starts the Hono backend on `http://localhost:8787` and Vite on `http://localhost:5173` concurrently. Open the Vite URL.
+This runs the Hono backend and the Vite frontend concurrently:
+
+- Backend: `http://localhost:8787` (serves `/resume`, `/health`, `/`)
+- Frontend: `http://localhost:5173` (Vite, with hot module reload)
+
+Wait for the line `[server] listening on http://localhost:8787` and Vite's `ready in …` line, then open `http://localhost:5173` in the browser.
+
+### 4. Edit your CV
+
+The editor loads `data/resume.json` on startup. Click any section or item in the left sidebar, edit fields in the middle panel, and watch the live preview on the right update as you type. Changes auto-save to `data/resume.json` ~500 ms after typing stops.
+
+To use a different CV, replace `data/resume.json` with your own (the shape is documented in [`CONTEXT.md`](CONTEXT.md) and the TypeScript types in [`src/types.ts`](src/types.ts)). Reload the page and the editor picks it up.
+
+### 5. Export the PDF
+
+Click **Export PDF** in the top-right of the toolbar. The browser downloads a PDF named after the resume header (e.g. `Emanuel_Rodriguez_Bedeman.pdf`).
+
+### 6. Stop / restart
+
+`Ctrl+C` in the terminal where `npm run dev` is running stops both processes. Run `npm run dev` again to resume — the editor will load whatever is in `data/resume.json`, including changes from the previous session.
+
+### Useful scripts
 
 | Script | What it does |
 | --- | --- |
@@ -53,6 +81,16 @@ Starts the Hono backend on `http://localhost:8787` and Vite on `http://localhost
 | `npm run typecheck` | `tsc -b --noEmit` over the whole project |
 | `npm run build` | Production build of the frontend |
 | `npm run preview` | Serve the production build for sanity-checking |
+
+### Versioning your CV
+
+`data/resume.json` is checked into git on purpose. Every edit changes the file; commit when you reach a state you want to keep, and you get a free history of your CV with `git log data/resume.json`. To revert unsaved local edits, run `git checkout data/resume.json`.
+
+### Troubleshooting
+
+- **Port already in use** (`EADDRINUSE`) — another process is on `8787` or `5173`. Kill it (`taskkill /F /PID …` on Windows, `kill …` elsewhere) and retry.
+- **Backend not reachable** in the browser — confirm both `npm run dev` log lines appeared. Vite proxies `/resume` and `/health` to the backend; if the backend crashed, the proxy returns errors.
+- **Slash commands missing** (`/grill-me`, `/to-prd`, etc.) in Claude Code — that's the local plugin in `claude-skills/`. After cloning or moving the folder, restart Claude Code so the marketplace cache refreshes.
 
 ## How it works
 
