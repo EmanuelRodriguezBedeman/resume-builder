@@ -1,6 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { PDFDownloadLink, PDFViewer } from "@react-pdf/renderer";
 import { Resume } from "./pdf/Resume.tsx";
+import { FormPanel } from "./components/FormPanel.tsx";
+import { Sidebar } from "./components/Sidebar.tsx";
+import { useStore } from "./store.ts";
 import type { Resume as ResumeType } from "./types.ts";
 
 function slugifyName(name: string): string {
@@ -40,26 +43,27 @@ const disabledButtonStyle: React.CSSProperties = {
 };
 
 export function App() {
-  const [resume, setResume] = useState<ResumeType | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const state = useStore((s) => s.state);
+  const setLoaded = useStore((s) => s.setLoaded);
+  const setError = useStore((s) => s.setError);
 
   useEffect(() => {
     fetch("/resume")
       .then((r) => r.json() as Promise<{ resume: ResumeType }>)
-      .then((data) => setResume(data.resume))
+      .then((data) => setLoaded(data.resume))
       .catch((err: unknown) => setError(String(err)));
-  }, []);
+  }, [setLoaded, setError]);
 
-  if (error) {
+  if (state.status === "error") {
     return (
       <main style={{ padding: "2rem", fontFamily: "system-ui, sans-serif" }}>
         <h1>Error loading resume</h1>
-        <pre>{error}</pre>
+        <pre>{state.error}</pre>
       </main>
     );
   }
 
-  if (!resume) {
+  if (state.status === "loading") {
     return (
       <main style={{ padding: "2rem", fontFamily: "system-ui, sans-serif" }}>
         Loading…
@@ -67,6 +71,7 @@ export function App() {
     );
   }
 
+  const { resume } = state;
   const fileName = `${slugifyName(resume.header.name)}.pdf`;
 
   return (
@@ -90,10 +95,21 @@ export function App() {
           }}
         </PDFDownloadLink>
       </div>
-      <div style={{ flex: 1, minHeight: 0 }}>
-        <PDFViewer width="100%" height="100%">
-          <Resume resume={resume} />
-        </PDFViewer>
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          display: "flex",
+          flexDirection: "row",
+        }}
+      >
+        <Sidebar resume={resume} />
+        <FormPanel resume={resume} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <PDFViewer width="100%" height="100%">
+            <Resume resume={resume} />
+          </PDFViewer>
+        </div>
       </div>
     </div>
   );

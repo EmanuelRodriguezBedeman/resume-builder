@@ -50,7 +50,10 @@
           "id": "expert-pericial",
           "title": "Expert Pericial",
           "subtitle": "FOUNDER — HEAD OF IT",
-          "dateRange": { "start": "2026-03", "end": null },
+          "dateRange": {
+            "start": "2026-03",
+            "end": null
+          },
           "description": [
             {
               "type": "paragraph",
@@ -62,7 +65,10 @@
           "id": "freelance",
           "title": "Freelance",
           "subtitle": "DATA SCIENTIST / DATA ENGINEER",
-          "dateRange": { "start": "2025-09", "end": "2026-03" },
+          "dateRange": {
+            "start": "2025-09",
+            "end": "2026-03"
+          },
           "description": [
             {
               "type": "bullet",
@@ -78,7 +84,10 @@
           "id": "adia-health",
           "title": "Adia Health",
           "subtitle": "DATA SCIENTIST & DATA ANALYST",
-          "dateRange": { "start": "2025-03", "end": "2025-09" },
+          "dateRange": {
+            "start": "2025-03",
+            "end": "2025-09"
+          },
           "description": [
             {
               "type": "bullet",
@@ -106,19 +115,37 @@
           "id": "humai",
           "title": "HumAI",
           "subtitle": "TUTOR IN THE DATA SCIENCE COURSES:",
-          "dateRange": { "start": "2024-06", "end": "2025-02" },
+          "dateRange": {
+            "start": "2024-06",
+            "end": "2025-02"
+          },
           "description": [
-            { "type": "bullet", "text": "Introduction to programming." },
-            { "type": "bullet", "text": "Data Analysis." },
-            { "type": "bullet", "text": "Databases." },
-            { "type": "bullet", "text": "Advanced Python." }
+            {
+              "type": "bullet",
+              "text": "Introduction to programming."
+            },
+            {
+              "type": "bullet",
+              "text": "Data Analysis."
+            },
+            {
+              "type": "bullet",
+              "text": "Databases."
+            },
+            {
+              "type": "bullet",
+              "text": "Advanced Python."
+            }
           ]
         },
         {
           "id": "lab-salud-publica",
           "title": "Laboratorio de Innovacion Tecnologica en Salud Publica (+Lab)",
           "subtitle": "DATA SCIENTIST",
-          "dateRange": { "start": "2022-07", "end": "2025-03" },
+          "dateRange": {
+            "start": "2022-07",
+            "end": "2025-03"
+          },
           "description": [
             {
               "type": "bullet",
@@ -141,7 +168,10 @@
           "id": "club-municipal-vilo",
           "title": "Club Municipal de Vicente Lopez (VILO)",
           "subtitle": "MEDICAL DOCTOR",
-          "dateRange": { "start": "2024-11", "end": "2025-03" },
+          "dateRange": {
+            "start": "2024-11",
+            "end": "2025-03"
+          },
           "description": [
             {
               "type": "bullet",
@@ -153,7 +183,10 @@
           "id": "racing-club",
           "title": "Racing Club de Avellaneda",
           "subtitle": "MEDICAL DOCTOR",
-          "dateRange": { "start": "2024-08", "end": "2025-04" },
+          "dateRange": {
+            "start": "2024-08",
+            "end": "2025-04"
+          },
           "description": [
             {
               "type": "bullet",
@@ -165,7 +198,10 @@
           "id": "clinica-metro-del-sur",
           "title": "Clinica Medicina Laboral \"Metro del sur\"",
           "subtitle": "OCCUPATIONAL HEALTH PHYSICIAN",
-          "dateRange": { "start": "2024-01", "end": "2024-03" },
+          "dateRange": {
+            "start": "2024-01",
+            "end": "2024-03"
+          },
           "description": [
             {
               "type": "bullet",
@@ -177,7 +213,10 @@
           "id": "ceba",
           "title": "Centro de Epilepsia de Buenos Aires (CEBA)",
           "subtitle": "ELECTROENCEPHALOGRAPHY TECHNICIAN",
-          "dateRange": { "start": "2013-03", "end": "2019-04" },
+          "dateRange": {
+            "start": "2013-03",
+            "end": "2019-04"
+          },
           "description": [
             {
               "type": "paragraph",
@@ -197,19 +236,28 @@
           "id": "edvai",
           "title": "Escuela de datos vivos (EDVAI)",
           "subtitle": "DATA ENGINEERING",
-          "date": { "start": "2024-11", "end": "2025-01" }
+          "date": {
+            "start": "2024-11",
+            "end": "2025-01"
+          }
         },
         {
           "id": "uba",
           "title": "Universidad de Buenos Aires (UBA)",
           "subtitle": "MEDICINE",
-          "date": { "start": "2014", "end": "2023" }
+          "date": {
+            "start": "2014",
+            "end": "2023"
+          }
         },
         {
           "id": "hospital-britanico",
           "title": "Hospital Británico",
           "subtitle": "ELECTROENCEPHALOGRAPHY TECHNICIAN",
-          "date": { "start": "2013-03", "end": "2013-11" }
+          "date": {
+            "start": "2013-03",
+            "end": "2013-11"
+          }
         }
       ]
     },
@@ -223,25 +271,35 @@
           "id": "lomas-jr-data-analyst",
           "title": "Universidad de Lomas de Zamora",
           "subtitle": "JR. DATA ANALYST",
-          "date": { "start": "2023-01", "end": "2025-10" }
+          "date": {
+            "start": "2023-01",
+            "end": "2025-10"
+          }
         },
         {
           "id": "udemy-python3",
           "title": "Udemy",
           "subtitle": "CURSO MAESTRO DE PYTHON 3",
-          "date": { "start": "2015", "end": "2023" }
+          "date": {
+            "start": "2015",
+            "end": "2023"
+          }
         },
         {
           "id": "udemy-ml",
           "title": "Udemy",
           "subtitle": "MACHINE LEARNING: DATA SCIENCE IN PYTHON",
-          "date": { "start": "2021-10" }
+          "date": {
+            "start": "2021-10"
+          }
         },
         {
           "id": "kaggle-ds",
           "title": "Kaggle",
           "subtitle": "DATA SCIENCE & ANALYTICS IN PYTHON",
-          "date": { "start": "2021-12" }
+          "date": {
+            "start": "2021-12"
+          }
         }
       ]
     },
@@ -287,12 +345,24 @@
         {
           "id": "skills-secondary",
           "category": "Secondary",
-          "tags": ["R", "Node.js", "Tailwind", "Bootstrap", "CSS", "HTML5"]
+          "tags": [
+            "R",
+            "Node.js",
+            "Tailwind",
+            "Bootstrap",
+            "CSS",
+            "HTML5"
+          ]
         },
         {
           "id": "skills-databases",
           "category": "Databases",
-          "tags": ["PostgreSQL", "MySQL", "SQLite", "MongoDB"]
+          "tags": [
+            "PostgreSQL",
+            "MySQL",
+            "SQLite",
+            "MongoDB"
+          ]
         }
       ]
     },
@@ -337,14 +407,26 @@
             }
           ],
           "links": [
-            { "id": "notebook", "icon": "github", "label": "Notebook", "href": "https://github.com/EmanuelRodriguezBedeman/Academic-Performance/blob/main/Modelos%20Desercion%20univeristaria.ipynb" },
-            { "id": "paper", "icon": "link", "label": "Paper", "href": "https://docs.google.com/document/d/1wBbm4sJ2s0B36Ex7Fd8mPHLq-C8CMvm1/edit" }
+            {
+              "id": "notebook",
+              "icon": "github",
+              "label": "Notebook",
+              "href": "https://github.com/EmanuelRodriguezBedeman/Academic-Performance/blob/main/Modelos%20Desercion%20univeristaria.ipynb"
+            },
+            {
+              "id": "paper",
+              "icon": "link",
+              "label": "Paper",
+              "href": "https://docs.google.com/document/d/1wBbm4sJ2s0B36Ex7Fd8mPHLq-C8CMvm1/edit"
+            }
           ]
         },
         {
           "id": "dengue-dashboard",
           "title": "Epidemiological Dashboard of Dengue in the City of Buenos Aires",
-          "techStack": ["Looker Studio"],
+          "techStack": [
+            "Looker Studio"
+          ],
           "description": [
             {
               "type": "paragraph",
@@ -352,7 +434,12 @@
             }
           ],
           "links": [
-            { "id": "dashboard", "icon": "bar-chart-3", "label": "Dashboard", "href": "https://datastudio.google.com/u/0/reporting/8245bcc5-960b-426e-b412-fdf36357d58a/page/B9NhD/edit" }
+            {
+              "id": "dashboard",
+              "icon": "bar-chart-3",
+              "label": "Dashboard",
+              "href": "https://datastudio.google.com/u/0/reporting/8245bcc5-960b-426e-b412-fdf36357d58a/page/B9NhD/edit"
+            }
           ]
         },
         {
@@ -375,7 +462,12 @@
             }
           ],
           "links": [
-            { "id": "repo", "icon": "github", "label": "Repository", "href": "https://github.com/EmanuelRodriguezBedeman/Data-Engineering-EDVAI/tree/main/Examen%20Final/Ejercicio%201" }
+            {
+              "id": "repo",
+              "icon": "github",
+              "label": "Repository",
+              "href": "https://github.com/EmanuelRodriguezBedeman/Data-Engineering-EDVAI/tree/main/Examen%20Final/Ejercicio%201"
+            }
           ]
         },
         {
@@ -398,13 +490,20 @@
             }
           ],
           "links": [
-            { "id": "repo", "icon": "github", "label": "Repository", "href": "https://github.com/EmanuelRodriguezBedeman/Data-Engineering-EDVAI/tree/main/Examen%20Final/Ejercicio%202" }
+            {
+              "id": "repo",
+              "icon": "github",
+              "label": "Repository",
+              "href": "https://github.com/EmanuelRodriguezBedeman/Data-Engineering-EDVAI/tree/main/Examen%20Final/Ejercicio%202"
+            }
           ]
         },
         {
           "id": "nyc-flights",
           "title": "New York City Flights",
-          "techStack": ["R"],
+          "techStack": [
+            "R"
+          ],
           "description": [
             {
               "type": "paragraph",
@@ -412,7 +511,12 @@
             }
           ],
           "links": [
-            { "id": "repo", "icon": "github", "label": "Repository", "href": "https://github.com/EmanuelRodriguezBedeman/R/tree/main/Data%20Analysis%20flights%20of%20New%20York%20(R)/English" }
+            {
+              "id": "repo",
+              "icon": "github",
+              "label": "Repository",
+              "href": "https://github.com/EmanuelRodriguezBedeman/R/tree/main/Data%20Analysis%20flights%20of%20New%20York%20(R)/English"
+            }
           ]
         }
       ]
