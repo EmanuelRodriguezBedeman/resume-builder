@@ -26,6 +26,9 @@ type Store = {
 
   // Mutations (each one auto-saves to the backend, debounced)
   updateHeaderName: (name: string) => void;
+  // Generic producer-based mutation. Form widgets pass a pure updater from
+  // src/updaters.ts and the store handles the save side effect.
+  setResume: (producer: (current: Resume) => Resume) => void;
 
   // Selection actions
   selectNone: () => void;
@@ -59,6 +62,14 @@ export const useStore = create<Store>((set) => ({
         ...prev.state.resume,
         header: { ...prev.state.resume.header, name },
       };
+      void debouncedSave(nextResume);
+      return { state: { status: "loaded", resume: nextResume } };
+    }),
+
+  setResume: (producer) =>
+    set((prev) => {
+      if (prev.state.status !== "loaded") return prev;
+      const nextResume = producer(prev.state.resume);
       void debouncedSave(nextResume);
       return { state: { status: "loaded", resume: nextResume } };
     }),

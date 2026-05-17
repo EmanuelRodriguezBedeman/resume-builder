@@ -27,9 +27,9 @@ const styles = StyleSheet.create({
   },
   techStack: {
     fontFamily: "Helvetica-Oblique",
-    fontSize: 9,
+    fontSize: 8.5,
     color: MUTED,
-    marginLeft: 6,
+    marginLeft: 4,
   },
   links: {
     flexDirection: "row",

@@ -1,9 +1,11 @@
-import type React from "react";
+import type { CSSProperties } from "react";
 import type { Resume } from "../types.ts";
 import { useStore } from "../store.ts";
+import { HeaderForm } from "./forms/HeaderForm.tsx";
+import { ItemForm, SectionForm } from "./forms/ItemForms.tsx";
 
-const panelStyle: React.CSSProperties = {
-  width: "320px",
+const panelStyle: CSSProperties = {
+  width: "340px",
   flexShrink: 0,
   height: "100%",
   overflowY: "auto",
@@ -14,49 +16,10 @@ const panelStyle: React.CSSProperties = {
   fontFamily: "system-ui, sans-serif",
 };
 
-const labelStyle: React.CSSProperties = {
-  display: "block",
-  fontSize: "0.78rem",
-  color: "#555",
-  marginBottom: "0.3rem",
-  fontWeight: 600,
-  textTransform: "uppercase",
-  letterSpacing: "0.5px",
-};
-
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "0.45rem 0.6rem",
-  fontSize: "0.95rem",
-  border: "1px solid #ccc",
-  borderRadius: "4px",
-  boxSizing: "border-box",
-  fontFamily: "system-ui, sans-serif",
-};
-
-const emptyStyle: React.CSSProperties = {
+const emptyStyle: CSSProperties = {
   color: "#888",
   fontSize: "0.9rem",
-  paddingTop: "0.5rem",
 };
-
-function HeaderForm({ resume }: { resume: Resume }) {
-  const updateHeaderName = useStore((s) => s.updateHeaderName);
-  return (
-    <div>
-      <h2 style={{ fontSize: "1rem", margin: "0 0 1rem", fontWeight: 700 }}>
-        Header
-      </h2>
-      <label style={labelStyle}>Name</label>
-      <input
-        type="text"
-        value={resume.header.name}
-        onChange={(e) => updateHeaderName(e.target.value)}
-        style={inputStyle}
-      />
-    </div>
-  );
-}
 
 export function FormPanel({ resume }: { resume: Resume }) {
   const selection = useStore((s) => s.selection);
@@ -69,12 +32,38 @@ export function FormPanel({ resume }: { resume: Resume }) {
     );
   }
 
+  if (selection.kind === "section") {
+    const section = resume.sections.find((s) => s.id === selection.sectionId);
+    if (!section) {
+      return (
+        <aside style={panelStyle}>
+          <p style={emptyStyle}>Section not found.</p>
+        </aside>
+      );
+    }
+    return (
+      <aside style={panelStyle}>
+        <SectionForm section={section} />
+      </aside>
+    );
+  }
+
+  if (selection.kind === "item") {
+    return (
+      <aside style={panelStyle}>
+        <ItemForm
+          resume={resume}
+          sectionId={selection.sectionId}
+          itemId={selection.itemId}
+        />
+      </aside>
+    );
+  }
+
   return (
     <aside style={panelStyle}>
       <p style={emptyStyle}>
-        Select an item from the sidebar to edit it. Full editing for every
-        field type arrives in the next slice — for now only{" "}
-        <strong>Header → Name</strong> is editable.
+        Select an item from the sidebar to edit it.
       </p>
     </aside>
   );
