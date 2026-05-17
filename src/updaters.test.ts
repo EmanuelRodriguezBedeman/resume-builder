@@ -6,6 +6,8 @@ import {
   withDescriptionBlock,
   withHeaderItem,
   withHeaderName,
+  withSectionAdded,
+  withSectionRemoved,
   withSectionTitle,
   withShowcaseItem,
   withShowcaseLink,
@@ -102,6 +104,35 @@ describe("Section title updater", () => {
     const next = withSectionTitle(baseResume, "exp", "Work History");
     expect(next.sections[0]?.title).toBe("Work History");
     expect(next.sections[1]).toEqual(baseResume.sections[1]);
+  });
+});
+
+describe("Section add/remove updaters", () => {
+  test("withSectionAdded appends an empty Section of the requested type", () => {
+    const next = withSectionAdded(baseResume, "showcase", "new-id");
+    expect(next.sections.length).toBe(baseResume.sections.length + 1);
+    const added = next.sections.at(-1);
+    expect(added?.id).toBe("new-id");
+    expect(added?.type).toBe("showcase");
+    expect(added?.items).toEqual([]);
+    expect(added?.hidden).toBe(false);
+  });
+
+  test("withSectionAdded preserves existing sections in order", () => {
+    const next = withSectionAdded(baseResume, "timeline", "x");
+    expect(next.sections.slice(0, -1)).toEqual(baseResume.sections);
+  });
+
+  test("withSectionRemoved drops only the matching section", () => {
+    const next = withSectionRemoved(baseResume, "edu");
+    expect(next.sections.length).toBe(baseResume.sections.length - 1);
+    expect(next.sections.find((s) => s.id === "edu")).toBeUndefined();
+    expect(next.sections.find((s) => s.id === "exp")).toBeDefined();
+  });
+
+  test("withSectionRemoved is a no-op for unknown id", () => {
+    const next = withSectionRemoved(baseResume, "does-not-exist");
+    expect(next.sections).toEqual(baseResume.sections);
   });
 });
 

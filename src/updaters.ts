@@ -68,6 +68,47 @@ export function withSectionTitle(
   return mapSection(resume, sectionId, (s) => ({ ...s, title }));
 }
 
+export type AddableSectionType =
+  | "timeline"
+  | "compactGrid"
+  | "showcase"
+  | "categorizedTags";
+
+/** Create an empty Section of the requested type and append it to the Resume. */
+export function withSectionAdded(
+  resume: Resume,
+  type: AddableSectionType,
+  id: string,
+): Resume {
+  const base = { id, title: "New section", hidden: false };
+  let section: Section;
+  switch (type) {
+    case "timeline":
+      section = { ...base, type: "timeline", items: [] };
+      break;
+    case "compactGrid":
+      section = { ...base, type: "compactGrid", items: [] };
+      break;
+    case "showcase":
+      section = { ...base, type: "showcase", items: [] };
+      break;
+    case "categorizedTags":
+      section = { ...base, type: "categorizedTags", items: [] };
+      break;
+  }
+  return { ...resume, sections: [...resume.sections, section] };
+}
+
+export function withSectionRemoved(
+  resume: Resume,
+  sectionId: string,
+): Resume {
+  return {
+    ...resume,
+    sections: resume.sections.filter((s) => s.id !== sectionId),
+  };
+}
+
 // -- Timeline item ------------------------------------------------------
 
 export function withTimelineItem(
