@@ -1,4 +1,18 @@
 import { useState, type CSSProperties } from "react";
+import {
+  DndContext,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import type { Resume, Section } from "../types.ts";
 import { useStore, type Selection } from "../store.ts";
 import {
@@ -6,10 +20,12 @@ import {
   withItemRemoved,
   withSectionAdded,
   withSectionRemoved,
+  withSectionsReordered,
   type AddableSectionType,
 } from "../updaters.ts";
 
-// Extract a display label per item depending on the section type.
+// -- helpers ------------------------------------------------------------
+
 function itemLabel(section: Section, itemId: string): string {
   if (section.type === "categorizedTags") {
     const item = section.items.find((i) => i.id === itemId);
@@ -86,6 +102,17 @@ const chevronStyle: CSSProperties = {
   color: "#555",
 };
 
+const dragHandleStyle: CSSProperties = {
+  display: "inline-block",
+  width: "0.9rem",
+  marginRight: "0.15rem",
+  textAlign: "center",
+  fontSize: "0.85rem",
+  color: "#888",
+  cursor: "grab",
+  userSelect: "none",
+};
+
 const deleteButtonStyle: CSSProperties = {
   border: "none",
   background: "transparent",
@@ -131,36 +158,42 @@ const pickerOptionStyle: CSSProperties = {
   cursor: "pointer",
 };
 
-// -- component ----------------------------------------------------------
+// -- sortable section ---------------------------------------------------
 
-const ADDABLE_TYPES: { type: AddableSectionType; label: string }[] = [
-  { type: "timeline", label: "Timeline (Experience-style)" },
-  { type: "compactGrid", label: "Compact grid (Education-style)" },
-  { type: "showcase", label: "Showcase (Projects-style)" },
-  { type: "categorizedTags", label: "Categorized tags (Skills-style)" },
-];
-
-export function Sidebar({ resume }: { resume: Resume }) {
+function SortableSectionBlock({ section }: { section: Section }) {
   const selection = useStore((s) => s.selection);
   const expanded = useStore((s) => s.expandedSections);
-  const selectHeader = useStore((s) => s.selectHeader);
   const selectSection = useStore((s) => s.selectSection);
   const selectItem = useStore((s) => s.selectItem);
   const toggleExpanded = useStore((s) => s.toggleSectionExpanded);
   const setResume = useStore((s) => s.setResume);
 
-  const [pickerOpen, setPickerOpen] = useState(false);
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: section.id });
 
-  function handleAddSection(type: AddableSectionType) {
-    const id = `section-${Date.now()}`;
-    setResume((r) => withSectionAdded(r, type, id));
-    setPickerOpen(false);
-    selectSection(id);
-  }
+  const sectionSelected = isSelected(selection, {
+    kind: "section",
+    sectionId: section.id,
+  });
+  const isExpanded = expanded.has(section.id);
 
-  function handleRemoveSection(section: Section) {
+  const wrapperStyle: CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    background: isDragging ? "#e8edf2" : "transparent",
+    borderRadius: "4px",
+  };
+
+  function handleRemove() {
     const confirmed = window.confirm(
-      `Remove section "${section.title}" and all its items? This cannot be undone via the UI (revert with git checkout data/resume.json).`,
+      `Remove section "${section.title}" and all its items? Revert with git checkout data/resume.json if needed.`,
     );
     if (!confirmed) return;
     setResume((r) => withSectionRemoved(r, section.id));
@@ -172,23 +205,162 @@ export function Sidebar({ resume }: { resume: Resume }) {
     }
   }
 
-  function handleAddItem(section: Section) {
+  function handleAddItem() {
     const itemId = `item-${Date.now()}`;
     setResume((r) => withItemAdded(r, section.id, itemId));
     selectItem(section.id, itemId);
   }
 
-  function handleRemoveItem(sectionId: string, itemId: string, label: string) {
+  function handleRemoveItem(itemId: string, label: string) {
     const confirmed = window.confirm(`Remove "${label}"?`);
     if (!confirmed) return;
-    setResume((r) => withItemRemoved(r, sectionId, itemId));
+    setResume((r) => withItemRemoved(r, section.id, itemId));
     if (
       selection.kind === "item" &&
-      selection.sectionId === sectionId &&
+      selection.sectionId === section.id &&
       selection.itemId === itemId
     ) {
       useStore.getState().selectNone();
     }
+  }
+
+  return (
+    <div ref={setNodeRef} style={wrapperStyle}>
+      <div style={sectionRowStyle(sectionSelected)}>
+        <span
+          {...attributes}
+          {...listeners}
+          style={dragHandleStyle}
+          title="Drag to reorder"
+          aria-label={`Drag handle for ${section.title}`}
+        >
+          ⋮⋮
+        </span>
+        <div
+          onClick={() => {
+            selectSection(section.id);
+            toggleExpanded(section.id);
+          }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            flex: 1,
+            minWidth: 0,
+          }}
+        >
+          <span style={chevronStyle}>{isExpanded ? "▾" : "▸"}</span>
+          <span
+            style={{
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {section.title}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleRemove();
+          }}
+          style={deleteButtonStyle}
+          title="Remove section"
+          aria-label={`Remove section ${section.title}`}
+        >
+          ×
+        </button>
+      </div>
+
+      {isExpanded ? (
+        <>
+          {section.items.map((item) => {
+            const itemSelected = isSelected(selection, {
+              kind: "item",
+              sectionId: section.id,
+              itemId: item.id,
+            });
+            const label = itemLabel(section, item.id);
+            return (
+              <div key={item.id} style={itemRowStyle(itemSelected)}>
+                <div
+                  onClick={() => selectItem(section.id, item.id)}
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {label || <em style={{ color: "#888" }}>untitled</em>}
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemoveItem(item.id, label || "untitled");
+                  }}
+                  style={deleteButtonStyle}
+                  title="Remove item"
+                  aria-label={`Remove ${label}`}
+                >
+                  ×
+                </button>
+              </div>
+            );
+          })}
+          <button
+            type="button"
+            onClick={handleAddItem}
+            style={addItemButtonStyle}
+          >
+            + Add item
+          </button>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+// -- main component -----------------------------------------------------
+
+const ADDABLE_TYPES: { type: AddableSectionType; label: string }[] = [
+  { type: "timeline", label: "Timeline (Experience-style)" },
+  { type: "compactGrid", label: "Compact grid (Education-style)" },
+  { type: "showcase", label: "Showcase (Projects-style)" },
+  { type: "categorizedTags", label: "Categorized tags (Skills-style)" },
+];
+
+export function Sidebar({ resume }: { resume: Resume }) {
+  const selection = useStore((s) => s.selection);
+  const selectHeader = useStore((s) => s.selectHeader);
+  const selectSection = useStore((s) => s.selectSection);
+  const setResume = useStore((s) => s.setResume);
+
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  // PointerSensor with a small activation distance so plain clicks on the
+  // handle don't accidentally start a drag.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const fromIdx = resume.sections.findIndex((s) => s.id === active.id);
+    const toIdx = resume.sections.findIndex((s) => s.id === over.id);
+    if (fromIdx < 0 || toIdx < 0) return;
+    setResume((r) => withSectionsReordered(r, fromIdx, toIdx));
+  }
+
+  function handleAddSection(type: AddableSectionType) {
+    const id = `section-${Date.now()}`;
+    setResume((r) => withSectionAdded(r, type, id));
+    setPickerOpen(false);
+    selectSection(id);
   }
 
   return (
@@ -220,95 +392,20 @@ export function Sidebar({ resume }: { resume: Resume }) {
         Header
       </button>
 
-      {resume.sections.map((section) => {
-        const isExpanded = expanded.has(section.id);
-        const sectionSelected = isSelected(selection, {
-          kind: "section",
-          sectionId: section.id,
-        });
-        return (
-          <div key={section.id}>
-            <div style={sectionRowStyle(sectionSelected)}>
-              <div
-                onClick={() => {
-                  selectSection(section.id);
-                  toggleExpanded(section.id);
-                }}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  flex: 1,
-                  minWidth: 0,
-                }}
-              >
-                <span style={chevronStyle}>{isExpanded ? "▾" : "▸"}</span>
-                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {section.title}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleRemoveSection(section);
-                }}
-                style={deleteButtonStyle}
-                title="Remove section"
-                aria-label={`Remove section ${section.title}`}
-              >
-                ×
-              </button>
-            </div>
-            {isExpanded ? (
-              <>
-                {section.items.map((item) => {
-                  const itemSelected = isSelected(selection, {
-                    kind: "item",
-                    sectionId: section.id,
-                    itemId: item.id,
-                  });
-                  const label = itemLabel(section, item.id);
-                  return (
-                    <div key={item.id} style={itemRowStyle(itemSelected)}>
-                      <div
-                        onClick={() => selectItem(section.id, item.id)}
-                        style={{
-                          flex: 1,
-                          minWidth: 0,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {label || <em style={{ color: "#888" }}>untitled</em>}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRemoveItem(section.id, item.id, label || "untitled");
-                        }}
-                        style={deleteButtonStyle}
-                        title="Remove item"
-                        aria-label={`Remove ${label}`}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  );
-                })}
-                <button
-                  type="button"
-                  onClick={() => handleAddItem(section)}
-                  style={addItemButtonStyle}
-                >
-                  + Add item
-                </button>
-              </>
-            ) : null}
-          </div>
-        );
-      })}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={resume.sections.map((s) => s.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {resume.sections.map((section) => (
+            <SortableSectionBlock key={section.id} section={section} />
+          ))}
+        </SortableContext>
+      </DndContext>
 
       <button
         type="button"

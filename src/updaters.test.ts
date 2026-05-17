@@ -12,6 +12,7 @@ import {
   withItemRemoved,
   withSectionAdded,
   withSectionRemoved,
+  withSectionsReordered,
   withSectionTitle,
   withShowcaseItem,
   withShowcaseLink,
@@ -210,6 +211,39 @@ describe("Section add/remove updaters", () => {
   test("withSectionRemoved is a no-op for unknown id", () => {
     const next = withSectionRemoved(baseResume, "does-not-exist");
     expect(next.sections).toEqual(baseResume.sections);
+  });
+});
+
+describe("withSectionsReordered", () => {
+  test("moves a section from one index to another", () => {
+    // base order: exp, edu, proj, skills
+    const next = withSectionsReordered(baseResume, 0, 2);
+    expect(next.sections.map((s) => s.id)).toEqual([
+      "edu",
+      "proj",
+      "exp",
+      "skills",
+    ]);
+  });
+
+  test("moving forward and backward both work", () => {
+    const next = withSectionsReordered(baseResume, 3, 0);
+    expect(next.sections.map((s) => s.id)).toEqual([
+      "skills",
+      "exp",
+      "edu",
+      "proj",
+    ]);
+  });
+
+  test("no-op when from === to", () => {
+    const next = withSectionsReordered(baseResume, 1, 1);
+    expect(next).toBe(baseResume);
+  });
+
+  test("no-op for out-of-range indices", () => {
+    expect(withSectionsReordered(baseResume, -1, 0)).toBe(baseResume);
+    expect(withSectionsReordered(baseResume, 0, 99)).toBe(baseResume);
   });
 });
 

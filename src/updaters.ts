@@ -135,6 +135,22 @@ export function withSectionRemoved(
   };
 }
 
+/** Move the section at `fromIdx` so it ends up at `toIdx`. */
+export function withSectionsReordered(
+  resume: Resume,
+  fromIdx: number,
+  toIdx: number,
+): Resume {
+  if (fromIdx === toIdx) return resume;
+  if (fromIdx < 0 || fromIdx >= resume.sections.length) return resume;
+  if (toIdx < 0 || toIdx >= resume.sections.length) return resume;
+  const sections = [...resume.sections];
+  const moved = sections.splice(fromIdx, 1)[0];
+  if (!moved) return resume;
+  sections.splice(toIdx, 0, moved);
+  return { ...resume, sections };
+}
+
 /** Append an empty item to a section. Shape depends on section type. */
 export function withItemAdded(
   resume: Resume,
