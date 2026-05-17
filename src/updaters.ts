@@ -135,6 +135,15 @@ export function withSectionRemoved(
   };
 }
 
+/** Flip the `hidden` flag on a section. Hidden sections stay in the
+ *  Resume but are skipped by the PDF renderer. */
+export function withSectionHiddenToggled(
+  resume: Resume,
+  sectionId: string,
+): Resume {
+  return mapSection(resume, sectionId, (s) => ({ ...s, hidden: !s.hidden }));
+}
+
 /** Move the section at `fromIdx` so it ends up at `toIdx`. */
 export function withSectionsReordered(
   resume: Resume,

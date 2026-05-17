@@ -12,6 +12,7 @@ import {
   withItemRemoved,
   withItemsReordered,
   withSectionAdded,
+  withSectionHiddenToggled,
   withSectionRemoved,
   withSectionsReordered,
   withSectionTitle,
@@ -280,6 +281,20 @@ describe("withItemsReordered", () => {
   test("no-op for unknown section", () => {
     const next = withItemsReordered(richResume, "missing", 0, 1);
     expect(next.sections).toEqual(richResume.sections);
+  });
+});
+
+describe("withSectionHiddenToggled", () => {
+  test("flips hidden from false to true on the matching section only", () => {
+    const next = withSectionHiddenToggled(baseResume, "exp");
+    expect(next.sections[0]?.hidden).toBe(true);
+    expect(next.sections[1]?.hidden).toBe(false);
+  });
+
+  test("flipping twice returns to the original value", () => {
+    const once = withSectionHiddenToggled(baseResume, "exp");
+    const twice = withSectionHiddenToggled(once, "exp");
+    expect(twice.sections[0]?.hidden).toBe(false);
   });
 });
 
