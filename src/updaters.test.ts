@@ -10,6 +10,7 @@ import {
   withHeaderName,
   withItemAdded,
   withItemRemoved,
+  withItemsReordered,
   withSectionAdded,
   withSectionRemoved,
   withSectionsReordered,
@@ -211,6 +212,74 @@ describe("Section add/remove updaters", () => {
   test("withSectionRemoved is a no-op for unknown id", () => {
     const next = withSectionRemoved(baseResume, "does-not-exist");
     expect(next.sections).toEqual(baseResume.sections);
+  });
+});
+
+describe("withItemsReordered", () => {
+  // The base fixture has only 1 item per section, build a richer one here.
+  const richResume: Resume = {
+    schemaVersion: 1,
+    header: { name: "X", items: [] },
+    sections: [
+      {
+        id: "exp",
+        type: "timeline",
+        title: "Experience",
+        hidden: false,
+        items: [
+          {
+            id: "a",
+            title: "A",
+            subtitle: "",
+            dateRange: { start: "2020-01", end: null },
+            description: [],
+          },
+          {
+            id: "b",
+            title: "B",
+            subtitle: "",
+            dateRange: { start: "2021-01", end: null },
+            description: [],
+          },
+          {
+            id: "c",
+            title: "C",
+            subtitle: "",
+            dateRange: { start: "2022-01", end: null },
+            description: [],
+          },
+        ],
+      },
+    ],
+  };
+
+  test("moves an item forward inside its parent section", () => {
+    const next = withItemsReordered(richResume, "exp", 0, 2);
+    const section = next.sections[0];
+    if (!section || section.type !== "timeline") throw new Error();
+    expect(section.items.map((i) => i.id)).toEqual(["b", "c", "a"]);
+  });
+
+  test("moves an item backward inside its parent section", () => {
+    const next = withItemsReordered(richResume, "exp", 2, 0);
+    const section = next.sections[0];
+    if (!section || section.type !== "timeline") throw new Error();
+    expect(section.items.map((i) => i.id)).toEqual(["c", "a", "b"]);
+  });
+
+  test("no-op when from === to", () => {
+    const next = withItemsReordered(richResume, "exp", 1, 1);
+    expect(next).toBe(richResume);
+  });
+
+  test("no-op for out-of-range indices", () => {
+    expect(withItemsReordered(richResume, "exp", -1, 0)).toBe(richResume);
+    expect(withItemsReordered(richResume, "exp", 0, 5)).toBe(richResume);
+  });
+
+  test("no-op for unknown section", () => {
+    const next = withItemsReordered(richResume, "missing", 0, 1);
+    expect(next.sections).toEqual(richResume.sections);
   });
 });
 

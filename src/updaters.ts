@@ -217,6 +217,40 @@ export function withItemRemoved(
   });
 }
 
+function reorderArray<T>(arr: T[], fromIdx: number, toIdx: number): T[] {
+  const next = [...arr];
+  const [moved] = next.splice(fromIdx, 1);
+  if (moved === undefined) return arr;
+  next.splice(toIdx, 0, moved);
+  return next;
+}
+
+/** Move the item at `fromIdx` to `toIdx` within its parent section. */
+export function withItemsReordered(
+  resume: Resume,
+  sectionId: string,
+  fromIdx: number,
+  toIdx: number,
+): Resume {
+  if (fromIdx === toIdx) return resume;
+  const section = resume.sections.find((s) => s.id === sectionId);
+  if (!section) return resume;
+  if (fromIdx < 0 || fromIdx >= section.items.length) return resume;
+  if (toIdx < 0 || toIdx >= section.items.length) return resume;
+  return mapSection(resume, sectionId, (s) => {
+    switch (s.type) {
+      case "timeline":
+        return { ...s, items: reorderArray(s.items, fromIdx, toIdx) };
+      case "compactGrid":
+        return { ...s, items: reorderArray(s.items, fromIdx, toIdx) };
+      case "showcase":
+        return { ...s, items: reorderArray(s.items, fromIdx, toIdx) };
+      case "categorizedTags":
+        return { ...s, items: reorderArray(s.items, fromIdx, toIdx) };
+    }
+  });
+}
+
 // -- Timeline item ------------------------------------------------------
 
 export function withTimelineItem(

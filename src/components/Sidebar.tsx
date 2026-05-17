@@ -18,11 +18,18 @@ import { useStore, type Selection } from "../store.ts";
 import {
   withItemAdded,
   withItemRemoved,
+  withItemsReordered,
   withSectionAdded,
   withSectionRemoved,
   withSectionsReordered,
   type AddableSectionType,
 } from "../updaters.ts";
+
+// Prefix sortable ids so sections and items live in distinct namespaces
+// inside the single DndContext. This way item drags can never target
+// section drop zones and vice versa.
+const SECTION_PREFIX = "section:";
+const ITEM_PREFIX = "item:";
 
 // -- helpers ------------------------------------------------------------
 
@@ -158,6 +165,95 @@ const pickerOptionStyle: CSSProperties = {
   cursor: "pointer",
 };
 
+// -- sortable item row --------------------------------------------------
+
+function SortableItemRow({
+  section,
+  item,
+}: {
+  section: Section;
+  item: { id: string };
+}) {
+  const selection = useStore((s) => s.selection);
+  const selectItem = useStore((s) => s.selectItem);
+  const setResume = useStore((s) => s.setResume);
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: ITEM_PREFIX + item.id });
+
+  const itemSelected = isSelected(selection, {
+    kind: "item",
+    sectionId: section.id,
+    itemId: item.id,
+  });
+  const label = itemLabel(section, item.id);
+
+  const wrapperStyle: CSSProperties = {
+    ...itemRowStyle(itemSelected),
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    background: isDragging ? "#e8edf2" : itemRowStyle(itemSelected).background,
+  };
+
+  function handleRemove() {
+    const confirmed = window.confirm(`Remove "${label || "untitled"}"?`);
+    if (!confirmed) return;
+    setResume((r) => withItemRemoved(r, section.id, item.id));
+    if (
+      selection.kind === "item" &&
+      selection.sectionId === section.id &&
+      selection.itemId === item.id
+    ) {
+      useStore.getState().selectNone();
+    }
+  }
+
+  return (
+    <div ref={setNodeRef} style={wrapperStyle}>
+      <span
+        {...attributes}
+        {...listeners}
+        style={{ ...dragHandleStyle, fontSize: "0.75rem" }}
+        title="Drag to reorder"
+        aria-label={`Drag handle for ${label}`}
+      >
+        ⋮⋮
+      </span>
+      <div
+        onClick={() => selectItem(section.id, item.id)}
+        style={{
+          flex: 1,
+          minWidth: 0,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {label || <em style={{ color: "#888" }}>untitled</em>}
+      </div>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          handleRemove();
+        }}
+        style={deleteButtonStyle}
+        title="Remove item"
+        aria-label={`Remove ${label}`}
+      >
+        ×
+      </button>
+    </div>
+  );
+}
+
 // -- sortable section ---------------------------------------------------
 
 function SortableSectionBlock({ section }: { section: Section }) {
@@ -175,7 +271,7 @@ function SortableSectionBlock({ section }: { section: Section }) {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: section.id });
+  } = useSortable({ id: SECTION_PREFIX + section.id });
 
   const sectionSelected = isSelected(selection, {
     kind: "section",
@@ -209,19 +305,6 @@ function SortableSectionBlock({ section }: { section: Section }) {
     const itemId = `item-${Date.now()}`;
     setResume((r) => withItemAdded(r, section.id, itemId));
     selectItem(section.id, itemId);
-  }
-
-  function handleRemoveItem(itemId: string, label: string) {
-    const confirmed = window.confirm(`Remove "${label}"?`);
-    if (!confirmed) return;
-    setResume((r) => withItemRemoved(r, section.id, itemId));
-    if (
-      selection.kind === "item" &&
-      selection.sectionId === section.id &&
-      selection.itemId === itemId
-    ) {
-      useStore.getState().selectNone();
-    }
   }
 
   return (
@@ -275,42 +358,18 @@ function SortableSectionBlock({ section }: { section: Section }) {
 
       {isExpanded ? (
         <>
-          {section.items.map((item) => {
-            const itemSelected = isSelected(selection, {
-              kind: "item",
-              sectionId: section.id,
-              itemId: item.id,
-            });
-            const label = itemLabel(section, item.id);
-            return (
-              <div key={item.id} style={itemRowStyle(itemSelected)}>
-                <div
-                  onClick={() => selectItem(section.id, item.id)}
-                  style={{
-                    flex: 1,
-                    minWidth: 0,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {label || <em style={{ color: "#888" }}>untitled</em>}
-                </div>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleRemoveItem(item.id, label || "untitled");
-                  }}
-                  style={deleteButtonStyle}
-                  title="Remove item"
-                  aria-label={`Remove ${label}`}
-                >
-                  ×
-                </button>
-              </div>
-            );
-          })}
+          <SortableContext
+            items={section.items.map((i) => ITEM_PREFIX + i.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            {section.items.map((item) => (
+              <SortableItemRow
+                key={item.id}
+                section={section}
+                item={item}
+              />
+            ))}
+          </SortableContext>
           <button
             type="button"
             onClick={handleAddItem}
@@ -348,12 +407,40 @@ export function Sidebar({ resume }: { resume: Resume }) {
   );
 
   function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const fromIdx = resume.sections.findIndex((s) => s.id === active.id);
-    const toIdx = resume.sections.findIndex((s) => s.id === over.id);
-    if (fromIdx < 0 || toIdx < 0) return;
-    setResume((r) => withSectionsReordered(r, fromIdx, toIdx));
+    const activeId = String(event.active.id);
+    const overId = event.over ? String(event.over.id) : null;
+    if (!overId || activeId === overId) return;
+
+    // Section drag: both ids share the section prefix.
+    if (
+      activeId.startsWith(SECTION_PREFIX) &&
+      overId.startsWith(SECTION_PREFIX)
+    ) {
+      const fromId = activeId.slice(SECTION_PREFIX.length);
+      const toId = overId.slice(SECTION_PREFIX.length);
+      const fromIdx = resume.sections.findIndex((s) => s.id === fromId);
+      const toIdx = resume.sections.findIndex((s) => s.id === toId);
+      if (fromIdx < 0 || toIdx < 0) return;
+      setResume((r) => withSectionsReordered(r, fromIdx, toIdx));
+      return;
+    }
+
+    // Item drag: both ids share the item prefix. Cross-section is rejected
+    // here by checking that both items belong to the same parent section.
+    if (activeId.startsWith(ITEM_PREFIX) && overId.startsWith(ITEM_PREFIX)) {
+      const fromItemId = activeId.slice(ITEM_PREFIX.length);
+      const toItemId = overId.slice(ITEM_PREFIX.length);
+      const section = resume.sections.find((s) =>
+        s.items.some((i) => i.id === fromItemId),
+      );
+      if (!section) return;
+      const fromIdx = section.items.findIndex((i) => i.id === fromItemId);
+      const toIdx = section.items.findIndex((i) => i.id === toItemId);
+      if (fromIdx < 0 || toIdx < 0) return; // cross-section drag — no-op
+      setResume((r) =>
+        withItemsReordered(r, section.id, fromIdx, toIdx),
+      );
+    }
   }
 
   function handleAddSection(type: AddableSectionType) {
@@ -398,7 +485,7 @@ export function Sidebar({ resume }: { resume: Resume }) {
         onDragEnd={handleDragEnd}
       >
         <SortableContext
-          items={resume.sections.map((s) => s.id)}
+          items={resume.sections.map((s) => SECTION_PREFIX + s.id)}
           strategy={verticalListSortingStrategy}
         >
           {resume.sections.map((section) => (
