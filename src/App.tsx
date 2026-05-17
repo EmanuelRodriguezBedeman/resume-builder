@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { PDFDownloadLink, PDFViewer } from "@react-pdf/renderer";
 import { Resume } from "./pdf/Resume.tsx";
 import { FormPanel } from "./components/FormPanel.tsx";
@@ -10,7 +10,21 @@ function slugifyName(name: string): string {
   return name.trim().replace(/\s+/g, "_") || "resume";
 }
 
-const toolbarStyle: React.CSSProperties = {
+// Stop the PDF preview from regenerating on every keystroke (each regen
+// resets the iframe scroll). The latest resume is still used for the
+// Export PDF button so downloads always reflect the live state.
+function useDebouncedValue<T>(value: T, delayMs: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delayMs);
+    return () => clearTimeout(t);
+  }, [value, delayMs]);
+  return debounced;
+}
+
+const PREVIEW_DEBOUNCE_MS = 1500;
+
+const toolbarStyle: CSSProperties = {
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
@@ -21,7 +35,7 @@ const toolbarStyle: React.CSSProperties = {
   fontSize: "0.875rem",
 };
 
-const buttonStyle: React.CSSProperties = {
+const buttonStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   gap: "0.4em",
@@ -35,7 +49,7 @@ const buttonStyle: React.CSSProperties = {
   cursor: "pointer",
 };
 
-const disabledButtonStyle: React.CSSProperties = {
+const disabledButtonStyle: CSSProperties = {
   ...buttonStyle,
   background: "#8aa9d9",
   borderColor: "#8aa9d9",
@@ -71,13 +85,15 @@ export function App() {
     );
   }
 
-  const { resume } = state;
+  return <LoadedApp resume={state.resume} />;
+}
+
+function LoadedApp({ resume }: { resume: ResumeType }) {
   const fileName = `${slugifyName(resume.header.name)}.pdf`;
+  const previewResume = useDebouncedValue(resume, PREVIEW_DEBOUNCE_MS);
 
   return (
-    <div
-      style={{ display: "flex", flexDirection: "column", height: "100vh" }}
-    >
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
       <div style={toolbarStyle}>
         <span style={{ color: "#555" }}>Resume Builder</span>
         <PDFDownloadLink
@@ -107,7 +123,7 @@ export function App() {
         <FormPanel resume={resume} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <PDFViewer width="100%" height="100%">
-            <Resume resume={resume} />
+            <Resume resume={previewResume} />
           </PDFViewer>
         </div>
       </div>
