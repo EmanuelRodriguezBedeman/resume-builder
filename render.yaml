@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: resume-builder
+    runtime: node
+    plan: free
+    # Install with dev deps so `tsx` (used by `npm start`) is available,
+    # then build the Vite bundle into ./dist.
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: NODE_ENV
+        value: production

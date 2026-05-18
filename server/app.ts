@@ -1,14 +1,9 @@
 import { Hono } from "hono";
+import { serveStatic } from "@hono/node-server/serve-static";
 import { readResume, writeResume, type Resume } from "./storage.ts";
 
 export function createApp(dataFile: string) {
   const app = new Hono();
-
-  app.get("/", (c) =>
-    c.text(
-      "Resume Builder API. Endpoints: GET /health, GET /resume, POST /resume",
-    ),
-  );
 
   app.get("/health", (c) => c.json({ ok: true }));
 
@@ -40,6 +35,14 @@ export function createApp(dataFile: string) {
       return c.json({ error: "write_failed" }, 500);
     }
   });
+
+  // Serve the built Vite frontend in production. In dev Vite runs on a
+  // separate port and proxies /resume here, so skipping these handlers
+  // also keeps the "./dist not found" warning out of the dev log.
+  if (process.env["NODE_ENV"] === "production") {
+    app.use("/*", serveStatic({ root: "./dist" }));
+    app.get("*", serveStatic({ path: "./dist/index.html" }));
+  }
 
   return app;
 }
