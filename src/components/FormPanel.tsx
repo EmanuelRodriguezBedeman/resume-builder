@@ -9,12 +9,12 @@ import { ItemForm, SectionForm } from "./forms/ItemForms.tsx";
 // -- Styles -------------------------------------------------------------
 
 const RAIL_WIDTH = 36;
-const PANEL_WIDTH = 380;
+const RESIZE_HANDLE_WIDTH = 5;
 
-const asideStyle = (collapsed: boolean): CSSProperties => ({
+const asideStyle = (collapsed: boolean, width: number): CSSProperties => ({
   display: "flex",
   flexDirection: "row",
-  width: collapsed ? `${RAIL_WIDTH}px` : `${PANEL_WIDTH}px`,
+  width: collapsed ? `${RAIL_WIDTH}px` : `${width}px`,
   flexShrink: 0,
   height: "100%",
   background: theme.color.panelBg,
@@ -44,11 +44,21 @@ const railStyle: CSSProperties = {
   position: "relative",
 };
 
+const resizeHandleStyle: CSSProperties = {
+  position: "absolute",
+  top: 0,
+  // Sits on the panel's left edge, slightly straddling it so it's easy
+  // to grab without hitting other elements inside the panel body.
+  left: `-${Math.floor(RESIZE_HANDLE_WIDTH / 2)}px`,
+  width: `${RESIZE_HANDLE_WIDTH}px`,
+  height: "100%",
+  cursor: "ew-resize",
+  zIndex: 3,
+};
+
 const roundButtonStyle: CSSProperties = {
   position: "absolute",
   top: "50%",
-  // Anchor the button center to the panel's right edge — half inside the
-  // panel, half overhanging onto the preview area.
   right: 0,
   transform: "translate(50%, -50%)",
   width: "30px",
@@ -77,9 +87,36 @@ export function FormPanel({ resume }: { resume: Resume }) {
   const selection = useStore((s) => s.selection);
   const panelCollapsed = useStore((s) => s.panelCollapsed);
   const togglePanelCollapsed = useStore((s) => s.togglePanelCollapsed);
+  const formPanelWidth = useStore((s) => s.formPanelWidth);
+  const setFormPanelWidth = useStore((s) => s.setFormPanelWidth);
+
+  function startResize(e: React.MouseEvent) {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = formPanelWidth;
+    const prevCursor = document.body.style.cursor;
+    const prevSelect = document.body.style.userSelect;
+    document.body.style.cursor = "ew-resize";
+    document.body.style.userSelect = "none";
+    function onMove(ev: MouseEvent) {
+      // The handle is on the LEFT edge: moving left grows the panel.
+      setFormPanelWidth(startW - (ev.clientX - startX));
+    }
+    function onUp() {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+      document.body.style.cursor = prevCursor;
+      document.body.style.userSelect = prevSelect;
+    }
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  }
 
   return (
-    <aside style={asideStyle(panelCollapsed)}>
+    <aside style={asideStyle(panelCollapsed, formPanelWidth)}>
+      {!panelCollapsed ? (
+        <div style={resizeHandleStyle} onMouseDown={startResize} />
+      ) : null}
       {!panelCollapsed ? (
         <div style={bodyStyle}>{renderBody(resume, selection)}</div>
       ) : null}

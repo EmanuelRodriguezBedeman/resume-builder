@@ -9,12 +9,16 @@ export const theme = {
     primary: "#5B4FE5",
     primaryHover: "#4338CA",
 
-    // Export PDF button gradient — violet → pink, the Canva-style pop.
+    // Export PDF button — same anchor hues as the toolbar (cyan + violet)
+    // but reversed direction: cyan top-left, violet bottom-right. So the
+    // button's left edge picks up where the toolbar's cyan right end is,
+    // and the violet side gives the button its own identity / pop.
     primaryGradient:
-      "linear-gradient(135deg, #8B3DFF 0%, #FF3EAE 100%)",
-    // Layered shadow: pink halo + tighter violet lift + inner top highlight.
+      "linear-gradient(135deg, #06B6D4 0%, #7C3AED 100%)",
+    // Violet halo (matches the deeper end of the button) so the glow
+    // spreads against the toolbar's cyan bg → strong separation.
     primaryGradientShadow:
-      "0 8px 24px rgba(255, 62, 174, 0.45), 0 2px 6px rgba(124, 58, 237, 0.40), inset 0 1px 0 rgba(255, 255, 255, 0.28)",
+      "0 8px 24px rgba(124, 58, 237, 0.45), 0 2px 6px rgba(6, 182, 212, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3)",
 
     // Sidebar — shared indigo dark base (no longer blue-only). Selection
     // pops with a blue→violet gradient (LinkedIn → Canva).
@@ -43,9 +47,12 @@ export const theme = {
     panelInputBg: "#171830",
     panelInputBorder: "rgba(255, 255, 255, 0.08)",
 
-    // Toolbar — LinkedIn blue → indigo → Canva violet sweep, with wave overlay.
+    // Toolbar — Canva-style cinematic sweep, inverted: violet on the
+    // left, dark navy dip in the middle, cyan on the right. The dark
+    // mid-point is what gives the gradient its dramatic depth (vs a
+    // simple two-color blend).
     toolbarGradient:
-      "linear-gradient(90deg, #0A66C2 0%, #4F46E5 50%, #7C3AED 100%)",
+      "linear-gradient(90deg, #7C3AED 0%, #1A1F2E 50%, #06B6D4 100%)",
     toolbarWave:
       "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='40' viewBox='0 0 240 40'><path d='M0 18 Q 30 6 60 18 T 120 18 T 180 18 T 240 18' fill='none' stroke='%23ffffff' stroke-opacity='0.14' stroke-width='1.5'/><path d='M0 30 Q 30 20 60 30 T 120 30 T 180 30 T 240 30' fill='none' stroke='%23ffffff' stroke-opacity='0.08' stroke-width='1'/></svg>\")",
     toolbarText: "#FFFFFF",
@@ -55,8 +62,10 @@ export const theme = {
     text: "#0F0F1A",
     textMuted: "#71717A",
 
-    danger: "#DC2626",
-    dangerSoftBg: "#FEE2E2",
+    // Rose-500 — clearly destructive but with a pink tilt that flows with
+    // the violet/pink accents instead of clashing as a pure red would.
+    danger: "#F43F5E",
+    dangerSoftBg: "#FFE4E8",
   },
 
   // Roundness — "(c) Generoso" from the grilling

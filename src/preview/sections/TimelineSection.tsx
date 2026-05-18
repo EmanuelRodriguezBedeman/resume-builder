@@ -1,7 +1,9 @@
-import type { CSSProperties } from "react";
-import type { TimelineSection as TimelineSectionType } from "../../types.ts";
+import { memo, useEffect, useRef, type CSSProperties } from "react";
+import { useShallow } from "zustand/react/shallow";
+import { useStore } from "../../store.ts";
 import { DescriptionBlocks } from "../DescriptionBlocks.tsx";
 import { SectionHeading } from "../SectionHeading.tsx";
+import { previewHoverStyle } from "../hoverHighlight.ts";
 import { formatDateRange } from "../../pdf/format.ts";
 
 const DATE_COLOR = "#555";
@@ -44,24 +46,97 @@ const subtitleStyle: CSSProperties = {
   marginTop: "2pt",
 };
 
-export function TimelineSection({
-  section,
+export const TimelineSection = memo(function TimelineSection({
+  sectionId,
 }: {
-  section: TimelineSectionType;
+  sectionId: string;
 }) {
+  const title = useStore((s) => {
+    if (s.state.status !== "loaded") return "";
+    const section = s.state.resume.sections.find((sec) => sec.id === sectionId);
+    return section?.title ?? "";
+  });
+  const itemIds = useStore(
+    useShallow((s) => {
+      if (s.state.status !== "loaded") return [];
+      const section = s.state.resume.sections.find(
+        (sec) => sec.id === sectionId,
+      );
+      if (!section || section.type !== "timeline") return [];
+      return section.items.map((i) => i.id);
+    }),
+  );
+  const isHovered = useStore(
+    (s) => s.hovered.kind === "section" && s.hovered.sectionId === sectionId,
+  );
+  const isSelected = useStore(
+    (s) =>
+      s.selection.kind === "section" && s.selection.sectionId === sectionId,
+  );
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (isSelected && ref.current) {
+      ref.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [isSelected]);
+  const highlighted = isHovered || isSelected;
   return (
-    <div style={sectionStyle}>
-      <SectionHeading title={section.title} />
-      {section.items.map((item) => (
-        <div key={item.id} style={itemStyle}>
-          <div style={headRowStyle}>
-            <span style={titleStyle}>{item.title}</span>
-            <span style={dateStyle}>{formatDateRange(item.dateRange)}</span>
-          </div>
-          <div style={subtitleStyle}>{item.subtitle}</div>
-          <DescriptionBlocks blocks={item.description} />
-        </div>
+    <div
+      ref={ref}
+      style={highlighted ? { ...sectionStyle, ...previewHoverStyle } : sectionStyle}
+    >
+      <SectionHeading title={title} />
+      {itemIds.map((id) => (
+        <TimelineItem key={id} sectionId={sectionId} itemId={id} />
       ))}
     </div>
   );
-}
+});
+
+const TimelineItem = memo(function TimelineItem({
+  sectionId,
+  itemId,
+}: {
+  sectionId: string;
+  itemId: string;
+}) {
+  const item = useStore((s) => {
+    if (s.state.status !== "loaded") return null;
+    const section = s.state.resume.sections.find((sec) => sec.id === sectionId);
+    if (!section || section.type !== "timeline") return null;
+    return section.items.find((i) => i.id === itemId) ?? null;
+  });
+  const isHovered = useStore(
+    (s) =>
+      s.hovered.kind === "item" &&
+      s.hovered.sectionId === sectionId &&
+      s.hovered.itemId === itemId,
+  );
+  const isSelected = useStore(
+    (s) =>
+      s.selection.kind === "item" &&
+      s.selection.sectionId === sectionId &&
+      s.selection.itemId === itemId,
+  );
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (isSelected && ref.current) {
+      ref.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [isSelected]);
+  if (!item) return null;
+  const highlighted = isHovered || isSelected;
+  return (
+    <div
+      ref={ref}
+      style={highlighted ? { ...itemStyle, ...previewHoverStyle } : itemStyle}
+    >
+      <div style={headRowStyle}>
+        <span style={titleStyle}>{item.title}</span>
+        <span style={dateStyle}>{formatDateRange(item.dateRange)}</span>
+      </div>
+      <div style={subtitleStyle}>{item.subtitle}</div>
+      <DescriptionBlocks blocks={item.description} />
+    </div>
+  );
+});

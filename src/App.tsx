@@ -30,10 +30,27 @@ const toolbarStyle: CSSProperties = {
 const brandStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
-  gap: "0.5rem",
+  gap: "0.55rem",
+  color: theme.color.toolbarText,
+};
+
+const brandTextStyle: CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  lineHeight: 1.15,
+};
+
+const brandTitleStyle: CSSProperties = {
   fontWeight: 700,
   fontSize: "0.95rem",
-  color: theme.color.toolbarText,
+};
+
+const brandSubtitleStyle: CSSProperties = {
+  fontSize: "0.66rem",
+  fontWeight: 500,
+  color: "rgba(255, 255, 255, 0.65)",
+  letterSpacing: "0.25px",
+  marginTop: "1px",
 };
 
 const brandIconStyle: CSSProperties = {
@@ -102,6 +119,9 @@ export function App() {
 }
 
 function LoadedApp({ resume }: { resume: ResumeType }) {
+  // HtmlPreview self-subscribes to the store, so it doesn't receive
+  // `resume` here. The PDF document is only realized on Export click,
+  // so re-creating the JSX on every keystroke is cheap.
   const fileName = `${slugifyName(resume.header.name)}.pdf`;
 
   const exportDocument = useMemo(
@@ -116,7 +136,12 @@ function LoadedApp({ resume }: { resume: ResumeType }) {
           <span style={brandIconStyle}>
             <FileText size={16} strokeWidth={2.5} />
           </span>
-          Resume Builder
+          <span style={brandTextStyle}>
+            <span style={brandTitleStyle}>Resume Builder</span>
+            <span style={brandSubtitleStyle}>
+              © 2026 Emanuel Rodriguez Bedeman
+            </span>
+          </span>
         </span>
         <PDFDownloadLink
           document={exportDocument}
@@ -152,7 +177,7 @@ function LoadedApp({ resume }: { resume: ResumeType }) {
         <Sidebar resume={resume} />
         <FormPanel resume={resume} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <HtmlPreview resume={resume} />
+          <HtmlPreview />
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
-import type { CSSProperties } from "react";
-import type { Resume } from "../types.ts";
+import { memo, type CSSProperties } from "react";
+import { useShallow } from "zustand/react/shallow";
+import { useStore } from "../store.ts";
 import { Header } from "./Header.tsx";
 import { SectionRenderer } from "./sections/index.tsx";
 
@@ -36,15 +37,25 @@ const pageStyle: CSSProperties = {
   color: "#000",
 };
 
-export function HtmlPreview({ resume }: { resume: Resume }) {
+// Self-subscribed: only re-renders when the *ordered list of section IDs*
+// changes (add / remove / reorder). Edits inside a section don't reach
+// this component — each section / item self-subscribes too.
+export const HtmlPreview = memo(function HtmlPreview() {
+  const sectionIds = useStore(
+    useShallow((s) =>
+      s.state.status === "loaded"
+        ? s.state.resume.sections.map((sec) => sec.id)
+        : [],
+    ),
+  );
   return (
     <div style={scrollContainerStyle}>
       <div style={pageStyle}>
-        <Header header={resume.header} />
-        {resume.sections.map((section) => (
-          <SectionRenderer key={section.id} section={section} />
+        <Header />
+        {sectionIds.map((id) => (
+          <SectionRenderer key={id} sectionId={id} />
         ))}
       </div>
     </div>
   );
-}
+});

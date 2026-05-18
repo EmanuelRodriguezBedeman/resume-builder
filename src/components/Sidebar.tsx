@@ -14,6 +14,8 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
+  ArrowLeft,
+  ArrowRight,
   ChevronDown,
   ChevronRight,
   Eye,
@@ -68,17 +70,62 @@ function isSelected(selection: Selection, target: Selection): boolean {
 
 // -- styles -------------------------------------------------------------
 
-const navStyle: CSSProperties = {
-  width: "280px",
+const SIDEBAR_COLLAPSED_W = 44;
+const SIDEBAR_RESIZE_HANDLE_W = 5;
+
+const asideStyle = (collapsed: boolean, width: number): CSSProperties => ({
+  display: "flex",
+  flexDirection: "column",
+  width: collapsed ? `${SIDEBAR_COLLAPSED_W}px` : `${width}px`,
   flexShrink: 0,
   height: "100%",
-  overflowY: "auto",
   background: theme.color.sidebarBg,
   color: theme.color.sidebarText,
   borderRight: `1px solid ${theme.color.sidebarBorder}`,
-  padding: "1rem 0.75rem",
   fontFamily: theme.font.family,
   boxSizing: "border-box",
+  position: "relative",
+});
+
+const topButtonRowStyle = (collapsed: boolean): CSSProperties => ({
+  display: "flex",
+  justifyContent: collapsed ? "center" : "flex-start",
+  padding: "0.6rem 0.6rem 0.3rem",
+  flexShrink: 0,
+});
+
+const squareToggleButtonStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  width: "30px",
+  height: "30px",
+  borderRadius: theme.radius.sm,
+  background: "rgba(255, 255, 255, 0.06)",
+  border: "1px solid rgba(255, 255, 255, 0.12)",
+  color: theme.color.sidebarText,
+  cursor: "pointer",
+  padding: 0,
+};
+
+const sidebarBodyStyle: CSSProperties = {
+  flex: 1,
+  minHeight: 0,
+  overflowY: "auto",
+  padding: "0.4rem 0.75rem 1rem",
+  boxSizing: "border-box",
+};
+
+const sidebarResizeHandleStyle: CSSProperties = {
+  position: "absolute",
+  top: 0,
+  // Straddle the right border so the grab area extends slightly past
+  // the visible edge — easier to hit with the cursor.
+  right: `-${Math.floor(SIDEBAR_RESIZE_HANDLE_W / 2)}px`,
+  width: `${SIDEBAR_RESIZE_HANDLE_W}px`,
+  height: "100%",
+  cursor: "ew-resize",
+  zIndex: 3,
 };
 
 const rowBase: CSSProperties = {
@@ -236,7 +283,14 @@ function SortableItemRow({
     itemId: item.id,
   });
   const label = itemLabel(section, item.id);
-  const [hovered, setHovered] = useState(false);
+  const hovered = useStore(
+    (s) =>
+      s.hovered.kind === "item" &&
+      s.hovered.sectionId === section.id &&
+      s.hovered.itemId === item.id,
+  );
+  const setHovered = useStore((s) => s.setHovered);
+  const clearHovered = useStore((s) => s.clearHovered);
 
   const wrapperStyle: CSSProperties = {
     ...itemRowStyle(itemSelected, hovered),
@@ -249,8 +303,11 @@ function SortableItemRow({
     <div
       ref={setNodeRef}
       style={wrapperStyle}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onClick={() => selectItem(section.id, item.id)}
+      onMouseEnter={() =>
+        setHovered({ kind: "item", sectionId: section.id, itemId: item.id })
+      }
+      onMouseLeave={clearHovered}
     >
       <span
         {...attributes}
@@ -262,7 +319,6 @@ function SortableItemRow({
         <GripVertical size={14} />
       </span>
       <div
-        onClick={() => selectItem(section.id, item.id)}
         style={{
           flex: 1,
           minWidth: 0,
@@ -336,7 +392,11 @@ function SortableSectionBlock({ section }: { section: Section }) {
   // bold gradient that marks the actual selection target.
   const hasSelectedChild =
     selection.kind === "item" && selection.sectionId === section.id;
-  const [hovered, setHovered] = useState(false);
+  const hovered = useStore(
+    (s) => s.hovered.kind === "section" && s.hovered.sectionId === section.id,
+  );
+  const setHovered = useStore((s) => s.setHovered);
+  const clearHovered = useStore((s) => s.clearHovered);
   const isExpanded = expanded.has(section.id);
 
   const wrapperStyle: CSSProperties = {
@@ -353,8 +413,14 @@ function SortableSectionBlock({ section }: { section: Section }) {
     <div ref={setNodeRef} style={wrapperStyle}>
       <div
         style={sectionRowStyle(sectionSelected, hovered || hasSelectedChild)}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
+        onClick={() => {
+          selectSection(section.id);
+          toggleExpanded(section.id);
+        }}
+        onMouseEnter={() =>
+          setHovered({ kind: "section", sectionId: section.id })
+        }
+        onMouseLeave={clearHovered}
       >
         <span
           {...attributes}
@@ -366,10 +432,6 @@ function SortableSectionBlock({ section }: { section: Section }) {
           <GripVertical size={14} />
         </span>
         <div
-          onClick={() => {
-            selectSection(section.id);
-            toggleExpanded(section.id);
-          }}
           style={{
             display: "flex",
             alignItems: "center",
@@ -554,10 +616,70 @@ export function Sidebar({ resume }: { resume: Resume }) {
   }
 
   const headerSelected = isSelected(selection, { kind: "header" });
-  const [headerHovered, setHeaderHovered] = useState(false);
+  const headerHovered = useStore((s) => s.hovered.kind === "header");
+  const setHovered = useStore((s) => s.setHovered);
+  const clearHovered = useStore((s) => s.clearHovered);
+  const sidebarCollapsed = useStore((s) => s.sidebarCollapsed);
+  const setSidebarCollapsed = useStore((s) => s.setSidebarCollapsed);
+  const setPanelCollapsed = useStore((s) => s.setPanelCollapsed);
+  const sidebarWidth = useStore((s) => s.sidebarWidth);
+  const setSidebarWidth = useStore((s) => s.setSidebarWidth);
+
+  // The square button collapses BOTH the sidebar and the right form
+  // panel together. The form panel still has its own button to toggle
+  // only itself.
+  function toggleBothPanels() {
+    const next = !sidebarCollapsed;
+    setSidebarCollapsed(next);
+    setPanelCollapsed(next);
+  }
+
+  function startResize(e: React.MouseEvent) {
+    if (sidebarCollapsed) return;
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = sidebarWidth;
+    const prevCursor = document.body.style.cursor;
+    const prevSelect = document.body.style.userSelect;
+    document.body.style.cursor = "ew-resize";
+    document.body.style.userSelect = "none";
+    function onMove(ev: MouseEvent) {
+      setSidebarWidth(startW + (ev.clientX - startX));
+    }
+    function onUp() {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+      document.body.style.cursor = prevCursor;
+      document.body.style.userSelect = prevSelect;
+    }
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  }
+
+  const toggleButton = (
+    <button
+      type="button"
+      onClick={toggleBothPanels}
+      style={squareToggleButtonStyle}
+      title={sidebarCollapsed ? "Expand panels" : "Collapse panels"}
+      aria-label={sidebarCollapsed ? "Expand panels" : "Collapse panels"}
+    >
+      {sidebarCollapsed ? <ArrowRight size={16} /> : <ArrowLeft size={16} />}
+    </button>
+  );
+
+  if (sidebarCollapsed) {
+    return (
+      <aside style={asideStyle(true, sidebarWidth)}>
+        <div style={topButtonRowStyle(true)}>{toggleButton}</div>
+      </aside>
+    );
+  }
 
   return (
-    <nav style={navStyle}>
+    <aside style={asideStyle(false, sidebarWidth)}>
+      <div style={topButtonRowStyle(false)}>{toggleButton}</div>
+      <nav style={sidebarBodyStyle}>
       <div style={{ padding: "0 0.4rem 0.95rem" }}>
         <div
           style={{
@@ -586,8 +708,8 @@ export function Sidebar({ resume }: { resume: Resume }) {
       <button
         type="button"
         onClick={selectHeader}
-        onMouseEnter={() => setHeaderHovered(true)}
-        onMouseLeave={() => setHeaderHovered(false)}
+        onMouseEnter={() => setHovered({ kind: "header" })}
+        onMouseLeave={clearHovered}
         style={{
           ...sectionRowStyle(headerSelected, headerHovered),
           width: "100%",
@@ -656,6 +778,8 @@ export function Sidebar({ resume }: { resume: Resume }) {
           ))}
         </div>
       ) : null}
-    </nav>
+      </nav>
+      <div style={sidebarResizeHandleStyle} onMouseDown={startResize} />
+    </aside>
   );
 }

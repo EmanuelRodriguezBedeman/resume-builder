@@ -1,6 +1,8 @@
-import type { CSSProperties } from "react";
-import type { Header as HeaderType, HeaderItem } from "../types.ts";
+import { memo, useEffect, useRef, type CSSProperties } from "react";
+import type { HeaderItem } from "../types.ts";
+import { useStore } from "../store.ts";
 import { Icon } from "./icons.tsx";
+import { previewHoverStyle } from "./hoverHighlight.ts";
 
 const ICON_SIZE = 13;
 const FONT_SIZE_PT = 9;
@@ -75,10 +77,29 @@ function HeaderItemView({ item }: { item: HeaderItem }) {
   );
 }
 
-export function Header({ header }: { header: HeaderType }) {
+// Self-subscribed to resume.header. Re-renders only when the header
+// object reference changes (i.e. any header field was edited).
+export const Header = memo(function Header() {
+  const header = useStore((s) =>
+    s.state.status === "loaded" ? s.state.resume.header : null,
+  );
+  const isHovered = useStore((s) => s.hovered.kind === "header");
+  const isSelected = useStore((s) => s.selection.kind === "header");
+  const ref = useRef<HTMLDivElement>(null);
+  // Scroll into view on every transition into the selected state.
+  useEffect(() => {
+    if (isSelected && ref.current) {
+      ref.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [isSelected]);
+  if (!header) return null;
   const rows = chunk(header.items, ITEMS_PER_ROW);
+  const highlighted = isHovered || isSelected;
   return (
-    <div style={containerStyle}>
+    <div
+      ref={ref}
+      style={highlighted ? { ...containerStyle, ...previewHoverStyle } : containerStyle}
+    >
       <div style={nameStyle}>{header.name}</div>
       {rows.map((row, idx) => (
         // eslint-disable-next-line react/no-array-index-key
@@ -90,4 +111,4 @@ export function Header({ header }: { header: HeaderType }) {
       ))}
     </div>
   );
-}
+});
