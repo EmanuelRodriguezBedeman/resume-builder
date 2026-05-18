@@ -1,10 +1,12 @@
 import { useEffect, useMemo, type CSSProperties } from "react";
 import { PDFDownloadLink } from "@react-pdf/renderer";
+import { Download, FileText } from "lucide-react";
 import { Resume } from "./pdf/Resume.tsx";
 import { HtmlPreview } from "./preview/HtmlPreview.tsx";
 import { FormPanel } from "./components/FormPanel.tsx";
 import { Sidebar } from "./components/Sidebar.tsx";
 import { useStore } from "./store.ts";
+import { theme } from "./theme.ts";
 import type { Resume as ResumeType } from "./types.ts";
 
 function slugifyName(name: string): string {
@@ -15,32 +17,60 @@ const toolbarStyle: CSSProperties = {
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
-  padding: "0.5rem 1rem",
-  borderBottom: "1px solid #d0d0d0",
-  background: "#fafafa",
-  fontFamily: "system-ui, sans-serif",
+  padding: "0.65rem 1.25rem",
+  borderBottom: `1px solid ${theme.color.toolbarBorder}`,
+  background: `${theme.color.toolbarWave}, ${theme.color.toolbarGradient}`,
+  backgroundSize: "240px 40px, auto",
+  backgroundRepeat: "repeat-x, no-repeat",
+  fontFamily: theme.font.family,
   fontSize: "0.875rem",
+  color: theme.color.toolbarText,
 };
 
-const buttonStyle: CSSProperties = {
+const brandStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "0.5rem",
+  fontWeight: 700,
+  fontSize: "0.95rem",
+  color: theme.color.toolbarText,
+};
+
+const brandIconStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
-  gap: "0.4em",
-  padding: "0.4em 0.9em",
-  borderRadius: "6px",
-  border: "1px solid #1f6feb",
-  background: "#1f6feb",
+  justifyContent: "center",
+  width: "28px",
+  height: "28px",
+  borderRadius: theme.radius.sm,
+  background: "rgba(255, 255, 255, 0.18)",
+  border: "1px solid rgba(255, 255, 255, 0.25)",
   color: "#fff",
-  fontWeight: 600,
-  textDecoration: "none",
-  cursor: "pointer",
+  backdropFilter: "blur(2px)",
 };
 
-const disabledButtonStyle: CSSProperties = {
-  ...buttonStyle,
-  background: "#8aa9d9",
-  borderColor: "#8aa9d9",
-  cursor: "default",
+const gradientButtonStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "0.45rem",
+  padding: "0.6rem 1.4rem",
+  borderRadius: theme.radius.pill,
+  border: "1px solid rgba(255, 255, 255, 0.35)",
+  background: theme.color.primaryGradient,
+  color: "#fff",
+  fontWeight: 700,
+  fontSize: "0.9rem",
+  letterSpacing: "0.2px",
+  textDecoration: "none",
+  cursor: "pointer",
+  boxShadow: theme.color.primaryGradientShadow,
+  fontFamily: theme.font.family,
+};
+
+const loadingScreenStyle: CSSProperties = {
+  padding: "2rem",
+  fontFamily: theme.font.family,
+  color: theme.color.textMuted,
 };
 
 export function App() {
@@ -57,7 +87,7 @@ export function App() {
 
   if (state.status === "error") {
     return (
-      <main style={{ padding: "2rem", fontFamily: "system-ui, sans-serif" }}>
+      <main style={loadingScreenStyle}>
         <h1>Error loading resume</h1>
         <pre>{state.error}</pre>
       </main>
@@ -65,11 +95,7 @@ export function App() {
   }
 
   if (state.status === "loading") {
-    return (
-      <main style={{ padding: "2rem", fontFamily: "system-ui, sans-serif" }}>
-        Loading…
-      </main>
-    );
+    return <main style={loadingScreenStyle}>Loading…</main>;
   }
 
   return <LoadedApp resume={state.resume} />;
@@ -78,8 +104,6 @@ export function App() {
 function LoadedApp({ resume }: { resume: ResumeType }) {
   const fileName = `${slugifyName(resume.header.name)}.pdf`;
 
-  // Memoize the React-PDF Resume element so the download link only
-  // regenerates its blob when the underlying resume changes.
   const exportDocument = useMemo(
     () => <Resume resume={resume} />,
     [resume],
@@ -88,16 +112,29 @@ function LoadedApp({ resume }: { resume: ResumeType }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
       <div style={toolbarStyle}>
-        <span style={{ color: "#555" }}>Resume Builder</span>
+        <span style={brandStyle}>
+          <span style={brandIconStyle}>
+            <FileText size={16} strokeWidth={2.5} />
+          </span>
+          Resume Builder
+        </span>
         <PDFDownloadLink
           document={exportDocument}
           fileName={fileName}
-          style={buttonStyle}
+          style={gradientButtonStyle}
         >
           {({ loading, error: dlError }) => {
             if (dlError) return "Export failed";
             return (
-              <span style={loading ? disabledButtonStyle : undefined}>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.45rem",
+                  opacity: loading ? 0.7 : 1,
+                }}
+              >
+                <Download size={14} strokeWidth={2.5} />
                 {loading ? "Generating…" : "Export PDF"}
               </span>
             );

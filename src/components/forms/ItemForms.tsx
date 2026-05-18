@@ -1,16 +1,20 @@
 import type {
   CategorizedTagsSection,
   CompactGridSection,
+  DescriptionBlock,
   Resume,
   Section,
   ShowcaseSection,
   TimelineSection,
 } from "../../types.ts";
 import { useStore } from "../../store.ts";
+import { theme } from "../../theme.ts";
 import {
   withCategorizedTagsItem,
   withCompactGridItem,
   withDescriptionBlock,
+  withDescriptionBlockAdded,
+  withDescriptionBlockRemoved,
   withShowcaseItem,
   withShowcaseLink,
   withShowcaseLinkAdded,
@@ -62,9 +66,17 @@ export function ItemForm({
   }
 }
 
+function makeBlock(type: DescriptionBlock["type"]): DescriptionBlock {
+  return type === "bullet"
+    ? { type: "bullet", text: "" }
+    : { type: "paragraph", text: "" };
+}
+
 function Empty({ message }: { message: string }) {
   return (
-    <p style={{ color: "#888", fontSize: "0.9rem" }}>{message}</p>
+    <p style={{ color: theme.color.panelTextMuted, fontSize: "0.9rem" }}>
+      {message}
+    </p>
   );
 }
 
@@ -73,7 +85,13 @@ function FormHeading({ title, subtitle }: { title: string; subtitle?: string }) 
     <div style={{ marginBottom: "1rem" }}>
       <h2 style={{ fontSize: "1rem", margin: "0", fontWeight: 700 }}>{title}</h2>
       {subtitle ? (
-        <p style={{ fontSize: "0.8rem", color: "#666", margin: "0.2rem 0 0" }}>
+        <p
+          style={{
+            fontSize: "0.8rem",
+            color: theme.color.panelTextMuted,
+            margin: "0.2rem 0 0",
+          }}
+        >
           {subtitle}
         </p>
       ) : null}
@@ -118,6 +136,16 @@ function TimelineItemForm({
         blocks={item.description}
         onChange={(idx, patch) =>
           setResume((r) => withDescriptionBlock(r, section.id, itemId, idx, patch))
+        }
+        onAdd={(type) =>
+          setResume((r) =>
+            withDescriptionBlockAdded(r, section.id, itemId, makeBlock(type)),
+          )
+        }
+        onRemove={(idx) =>
+          setResume((r) =>
+            withDescriptionBlockRemoved(r, section.id, itemId, idx),
+          )
         }
       />
     </div>
@@ -205,6 +233,16 @@ function ShowcaseItemForm({
         blocks={item.description}
         onChange={(idx, patch) =>
           setResume((r) => withDescriptionBlock(r, section.id, itemId, idx, patch))
+        }
+        onAdd={(type) =>
+          setResume((r) =>
+            withDescriptionBlockAdded(r, section.id, itemId, makeBlock(type)),
+          )
+        }
+        onRemove={(idx) =>
+          setResume((r) =>
+            withDescriptionBlockRemoved(r, section.id, itemId, idx),
+          )
         }
       />
       <LinkListEditor

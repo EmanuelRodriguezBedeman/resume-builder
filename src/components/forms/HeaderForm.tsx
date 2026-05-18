@@ -1,15 +1,18 @@
+import { Plus } from "lucide-react";
 import type { Resume } from "../../types.ts";
 import { useStore } from "../../store.ts";
+import { theme } from "../../theme.ts";
 import {
   withHeaderItem,
   withHeaderItemAdded,
   withHeaderItemRemoved,
 } from "../../updaters.ts";
+import { InlineConfirm } from "../InlineConfirm.tsx";
 import {
   IconPicker,
   TextField,
   cardStyle,
-  dangerButtonStyle,
+  dangerLinkStyle,
   fieldGroupStyle,
   labelStyle,
   subtleButtonStyle,
@@ -26,17 +29,9 @@ export function HeaderForm({ resume }: { resume: Resume }) {
     );
   }
 
-  function handleRemoveItem(itemId: string, text: string) {
-    const confirmed = window.confirm(
-      `Remove header item "${text || itemId}"?`,
-    );
-    if (!confirmed) return;
-    setResume((r) => withHeaderItemRemoved(r, itemId));
-  }
-
   return (
     <div>
-      <h2 style={{ fontSize: "1rem", margin: "0 0 1rem", fontWeight: 700 }}>
+      <h2 style={{ fontSize: "1.05rem", margin: "0 0 1.1rem", fontWeight: 700 }}>
         Header
       </h2>
       <TextField
@@ -54,19 +49,21 @@ export function HeaderForm({ resume }: { resume: Resume }) {
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                marginBottom: "0.4rem",
+                marginBottom: "0.5rem",
               }}
             >
-              <span style={{ fontSize: "0.78rem", color: "#555" }}>
-                id: <code>{item.id}</code>
+              <span style={{ fontSize: "0.74rem", color: theme.color.panelTextMuted }}>
+                <code>{item.id}</code>
               </span>
-              <button
-                type="button"
-                onClick={() => handleRemoveItem(item.id, item.text)}
-                style={dangerButtonStyle}
-              >
-                Remove
-              </button>
+              <InlineConfirm
+                ariaLabel={`remove header item ${item.text}`}
+                onConfirm={() => setResume((r) => withHeaderItemRemoved(r, item.id))}
+                trigger={({ onClick }) => (
+                  <button type="button" onClick={onClick} style={dangerLinkStyle}>
+                    Remove
+                  </button>
+                )}
+              />
             </div>
             <IconPicker
               label="Icon"
@@ -99,7 +96,8 @@ export function HeaderForm({ resume }: { resume: Resume }) {
           </div>
         ))}
         <button type="button" onClick={handleAddItem} style={subtleButtonStyle}>
-          + Add contact item
+          <Plus size={12} />
+          Add contact item
         </button>
       </div>
     </div>

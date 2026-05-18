@@ -1,4 +1,5 @@
-import { useState, type CSSProperties } from "react";
+import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+import { Plus, X } from "lucide-react";
 import type {
   DateRange,
   DescriptionBlock,
@@ -6,63 +7,82 @@ import type {
   IconName,
   ShowcaseLink,
 } from "../../types.ts";
+import { theme } from "../../theme.ts";
+import { InlineConfirm } from "../InlineConfirm.tsx";
 
 // -- Shared styles ------------------------------------------------------
 
 export const fieldGroupStyle: CSSProperties = {
-  marginBottom: "1rem",
+  marginBottom: "1.1rem",
 };
 
 export const labelStyle: CSSProperties = {
   display: "block",
   fontSize: "0.72rem",
-  color: "#555",
-  marginBottom: "0.3rem",
+  color: theme.color.panelTextMuted,
+  marginBottom: "0.35rem",
   fontWeight: 600,
   textTransform: "uppercase",
   letterSpacing: "0.5px",
+  fontFamily: theme.font.family,
 };
 
 export const inputStyle: CSSProperties = {
   width: "100%",
-  padding: "0.4rem 0.55rem",
+  padding: "0.55rem 0.7rem",
   fontSize: "0.9rem",
-  border: "1px solid #ccc",
-  borderRadius: "4px",
+  border: `1px solid ${theme.color.panelInputBorder}`,
+  background: theme.color.panelInputBg,
+  borderRadius: theme.radius.input,
   boxSizing: "border-box",
-  fontFamily: "system-ui, sans-serif",
+  fontFamily: theme.font.family,
+  color: theme.color.panelText,
+  outline: "none",
 };
 
 export const textareaStyle: CSSProperties = {
   ...inputStyle,
-  resize: "vertical",
-  minHeight: "4rem",
-  fontFamily: "system-ui, sans-serif",
+  resize: "none",
+  overflow: "hidden",
   lineHeight: 1.4,
 };
 
 export const subtleButtonStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "0.35rem",
   fontSize: "0.78rem",
-  padding: "0.25rem 0.55rem",
-  background: "#f0f1f3",
-  border: "1px solid #ccc",
-  borderRadius: "3px",
+  padding: "0.4rem 0.7rem",
+  background: theme.color.panelInputBg,
+  border: `1px solid ${theme.color.panelCardBorder}`,
+  borderRadius: theme.radius.sm,
   cursor: "pointer",
-  color: "#333",
+  color: theme.color.panelText,
+  fontFamily: theme.font.family,
 };
 
-export const dangerButtonStyle: CSSProperties = {
-  ...subtleButtonStyle,
-  color: "#a52a2a",
-  borderColor: "#d9b0b0",
+export const dangerLinkStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "0.3rem",
+  fontSize: "0.78rem",
+  padding: "0.3rem 0.6rem",
+  background: "transparent",
+  border: "none",
+  borderRadius: theme.radius.sm,
+  cursor: "pointer",
+  color: theme.color.danger,
+  fontFamily: theme.font.family,
 };
 
 export const cardStyle: CSSProperties = {
-  border: "1px solid #e0e0e0",
-  borderRadius: "6px",
-  padding: "0.6rem 0.7rem",
-  marginBottom: "0.5rem",
-  background: "#fafbfc",
+  border: `1px solid ${theme.color.panelCardBorder}`,
+  borderRadius: theme.radius.card,
+  padding: "0.85rem 1rem",
+  marginBottom: "0.65rem",
+  background: theme.color.panelCardBg,
+  color: theme.color.panelText,
+  boxShadow: theme.shadow.card,
 };
 
 // -- Text input ---------------------------------------------------------
@@ -86,6 +106,12 @@ export function TextField({
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
+        onFocus={(e) => {
+          e.target.style.boxShadow = `0 0 0 2px ${theme.color.primary}`;
+        }}
+        onBlur={(e) => {
+          e.target.style.boxShadow = "none";
+        }}
         style={inputStyle}
       />
     </div>
@@ -96,20 +122,33 @@ export function TextAreaField({
   label,
   value,
   onChange,
-  rows,
 }: {
   label: string;
   value: string;
   onChange: (next: string) => void;
-  rows?: number;
 }) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  // Auto-grow to fit content. Runs before paint to avoid flash.
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [value]);
   return (
     <div style={fieldGroupStyle}>
       <label style={labelStyle}>{label}</label>
       <textarea
+        ref={ref}
         value={value}
-        rows={rows ?? 3}
+        rows={1}
         onChange={(e) => onChange(e.target.value)}
+        onFocus={(e) => {
+          e.target.style.boxShadow = `0 0 0 2px ${theme.color.primary}`;
+        }}
+        onBlur={(e) => {
+          e.target.style.boxShadow = "none";
+        }}
         style={textareaStyle}
       />
     </div>
@@ -155,7 +194,7 @@ export function IconPicker({
   );
 }
 
-// -- Date range editor (Timeline: start + end or "Present") -----------
+// -- Date editors -------------------------------------------------------
 
 export function DateRangeEditor({
   label,
@@ -178,7 +217,9 @@ export function DateRangeEditor({
           onChange={(e) => onChange({ ...value, start: e.target.value })}
           style={{ ...inputStyle, flex: 1 }}
         />
-        <span style={{ color: "#888", fontSize: "0.8rem" }}>→</span>
+        <span style={{ color: theme.color.panelTextMuted, fontSize: "0.8rem" }}>
+          →
+        </span>
         <input
           type="text"
           value={value.end ?? ""}
@@ -188,7 +229,7 @@ export function DateRangeEditor({
           style={{
             ...inputStyle,
             flex: 1,
-            background: isPresent ? "#f0f0f0" : undefined,
+            opacity: isPresent ? 0.55 : 1,
           }}
         />
       </div>
@@ -197,9 +238,9 @@ export function DateRangeEditor({
           display: "flex",
           alignItems: "center",
           gap: "0.35rem",
-          marginTop: "0.4rem",
+          marginTop: "0.45rem",
           fontSize: "0.82rem",
-          color: "#444",
+          color: theme.color.panelTextMuted,
           cursor: "pointer",
         }}
       >
@@ -212,14 +253,13 @@ export function DateRangeEditor({
               end: e.target.checked ? null : "",
             })
           }
+          style={{ accentColor: theme.color.primary }}
         />
         Present
       </label>
     </div>
   );
 }
-
-// -- Flexible date editor (CompactGrid: optional start + optional end) -
 
 export function FlexibleDateEditor({
   label,
@@ -247,7 +287,9 @@ export function FlexibleDateEditor({
           }}
           style={{ ...inputStyle, flex: 1 }}
         />
-        <span style={{ color: "#888", fontSize: "0.8rem" }}>→</span>
+        <span style={{ color: theme.color.panelTextMuted, fontSize: "0.8rem" }}>
+          →
+        </span>
         <input
           type="text"
           value={end}
@@ -255,11 +297,7 @@ export function FlexibleDateEditor({
           onChange={(e) => {
             const newEnd = e.target.value;
             if (start === "" && newEnd === "") onChange(undefined);
-            else
-              onChange({
-                start: start,
-                ...(newEnd ? { end: newEnd } : {}),
-              });
+            else onChange({ start, ...(newEnd ? { end: newEnd } : {}) });
           }}
           style={{ ...inputStyle, flex: 1 }}
         />
@@ -268,7 +306,7 @@ export function FlexibleDateEditor({
   );
 }
 
-// -- Tag list editor (chip-style with add + remove) -------------------
+// -- Tag list editor ----------------------------------------------------
 
 export function TagListEditor({
   label,
@@ -289,23 +327,25 @@ export function TagListEditor({
         style={{
           display: "flex",
           flexWrap: "wrap",
-          gap: "0.3rem",
-          marginBottom: "0.4rem",
+          gap: "0.35rem",
+          marginBottom: "0.5rem",
         }}
       >
         {tags.map((tag, idx) => (
-          // eslint-disable-next-line react/no-array-index-key
           <span
+            // eslint-disable-next-line react/no-array-index-key
             key={idx}
             style={{
               display: "inline-flex",
               alignItems: "center",
               gap: "0.3rem",
-              padding: "0.18rem 0.45rem",
-              background: "#eef2f6",
-              border: "1px solid #d0d7df",
-              borderRadius: "12px",
+              padding: "0.2rem 0.55rem",
+              background: theme.color.panelInputBg,
+              border: `1px solid ${theme.color.panelCardBorder}`,
+              borderRadius: theme.radius.pill,
               fontSize: "0.8rem",
+              fontFamily: theme.font.family,
+              color: theme.color.panelText,
             }}
           >
             {tag}
@@ -313,42 +353,40 @@ export function TagListEditor({
               type="button"
               onClick={() => onRemove(idx)}
               style={{
+                display: "inline-flex",
+                alignItems: "center",
                 border: "none",
                 background: "transparent",
-                color: "#a52a2a",
+                color: theme.color.panelTextMuted,
                 cursor: "pointer",
-                fontSize: "0.9rem",
                 padding: 0,
-                lineHeight: 1,
               }}
               aria-label={`Remove ${tag}`}
             >
-              ×
+              <X size={12} />
             </button>
           </span>
         ))}
       </div>
-      <div style={{ display: "flex", gap: "0.4rem" }}>
-        <input
-          type="text"
-          placeholder="Add tag (press Enter)"
-          value={pending}
-          onChange={(e) => setPending(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && pending.trim()) {
-              e.preventDefault();
-              onAdd(pending.trim());
-              setPending("");
-            }
-          }}
-          style={{ ...inputStyle, flex: 1 }}
-        />
-      </div>
+      <input
+        type="text"
+        placeholder="Add tag (press Enter)"
+        value={pending}
+        onChange={(e) => setPending(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && pending.trim()) {
+            e.preventDefault();
+            onAdd(pending.trim());
+            setPending("");
+          }
+        }}
+        style={inputStyle}
+      />
     </div>
   );
 }
 
-// -- Link list editor (Showcase items) --------------------------------
+// -- Link list editor ---------------------------------------------------
 
 export function LinkListEditor({
   links,
@@ -365,7 +403,13 @@ export function LinkListEditor({
     <div style={fieldGroupStyle}>
       <label style={labelStyle}>Links</label>
       {links.length === 0 ? (
-        <p style={{ color: "#888", fontSize: "0.82rem", margin: "0 0 0.5rem" }}>
+        <p
+          style={{
+            color: theme.color.panelTextMuted,
+            fontSize: "0.82rem",
+            margin: "0 0 0.5rem",
+          }}
+        >
           No links yet.
         </p>
       ) : null}
@@ -376,19 +420,23 @@ export function LinkListEditor({
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              marginBottom: "0.4rem",
+              marginBottom: "0.5rem",
             }}
           >
-            <span style={{ fontSize: "0.78rem", color: "#555" }}>
-              id: <code>{link.id}</code>
-            </span>
-            <button
-              type="button"
-              onClick={() => onRemove(link.id)}
-              style={dangerButtonStyle}
+            <span
+              style={{ fontSize: "0.74rem", color: theme.color.panelTextMuted }}
             >
-              Remove
-            </button>
+              <code>{link.id}</code>
+            </span>
+            <InlineConfirm
+              ariaLabel={`remove link ${link.label}`}
+              onConfirm={() => onRemove(link.id)}
+              trigger={({ onClick }) => (
+                <button type="button" onClick={onClick} style={dangerLinkStyle}>
+                  Remove
+                </button>
+              )}
+            />
           </div>
           <IconPicker
             label="Icon"
@@ -409,36 +457,59 @@ export function LinkListEditor({
         </div>
       ))}
       <button type="button" onClick={onAdd} style={subtleButtonStyle}>
-        + Add link
+        <Plus size={12} />
+        Add link
       </button>
     </div>
   );
 }
 
-// -- Description block editor (Timeline + Showcase) -------------------
-// MVP scope: edit each existing block's text and (for bullets) leadIn.
-// Add/remove of blocks deferred to a follow-up if needed.
+// -- Description block editor ------------------------------------------
 
 export function DescriptionBlockEditor({
   blocks,
   onChange,
+  onAdd,
+  onRemove,
 }: {
   blocks: DescriptionBlock[];
   onChange: (idx: number, patch: Partial<DescriptionBlock>) => void;
+  onAdd: (type: DescriptionBlock["type"]) => void;
+  onRemove: (idx: number) => void;
 }) {
   return (
     <div style={fieldGroupStyle}>
       <label style={labelStyle}>Description</label>
       {blocks.length === 0 ? (
-        <p style={{ color: "#888", fontSize: "0.82rem" }}>No blocks.</p>
+        <p style={{ color: theme.color.panelTextMuted, fontSize: "0.82rem" }}>
+          No blocks.
+        </p>
       ) : null}
       {blocks.map((block, idx) => (
         // eslint-disable-next-line react/no-array-index-key
         <div key={idx} style={cardStyle}>
-          <div style={{ marginBottom: "0.4rem" }}>
-            <span style={{ fontSize: "0.78rem", color: "#555" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "0.45rem",
+            }}
+          >
+            <span
+              style={{ fontSize: "0.74rem", color: theme.color.panelTextMuted }}
+            >
               Block {idx + 1} · {block.type}
             </span>
+            <InlineConfirm
+              ariaLabel={`remove block ${idx + 1}`}
+              onConfirm={() => onRemove(idx)}
+              trigger={({ onClick }) => (
+                <button type="button" onClick={onClick} style={dangerLinkStyle}>
+                  Remove
+                </button>
+              )}
+            />
           </div>
           {block.type === "bullet" ? (
             <TextField
@@ -452,11 +523,28 @@ export function DescriptionBlockEditor({
           <TextAreaField
             label="Text"
             value={block.text}
-            rows={3}
             onChange={(text) => onChange(idx, { text })}
           />
         </div>
       ))}
+      <div style={{ display: "flex", gap: "0.4rem" }}>
+        <button
+          type="button"
+          onClick={() => onAdd("paragraph")}
+          style={subtleButtonStyle}
+        >
+          <Plus size={12} />
+          Add paragraph
+        </button>
+        <button
+          type="button"
+          onClick={() => onAdd("bullet")}
+          style={subtleButtonStyle}
+        >
+          <Plus size={12} />
+          Add bullet
+        </button>
+      </div>
     </div>
   );
 }

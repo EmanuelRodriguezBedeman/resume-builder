@@ -13,6 +13,16 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import {
+  ChevronDown,
+  ChevronRight,
+  Eye,
+  EyeOff,
+  GripVertical,
+  Plus,
+  Trash2,
+  UserRound,
+} from "lucide-react";
 import type { Resume, Section } from "../types.ts";
 import { useStore, type Selection } from "../store.ts";
 import {
@@ -25,10 +35,9 @@ import {
   withSectionsReordered,
   type AddableSectionType,
 } from "../updaters.ts";
+import { theme } from "../theme.ts";
+import { InlineConfirm } from "./InlineConfirm.tsx";
 
-// Prefix sortable ids so sections and items live in distinct namespaces
-// inside the single DndContext. This way item drags can never target
-// section drop zones and vice versa.
 const SECTION_PREFIX = "section:";
 const ITEM_PREFIX = "item:";
 
@@ -59,153 +68,144 @@ function isSelected(selection: Selection, target: Selection): boolean {
 
 // -- styles -------------------------------------------------------------
 
+const navStyle: CSSProperties = {
+  width: "280px",
+  flexShrink: 0,
+  height: "100%",
+  overflowY: "auto",
+  background: theme.color.sidebarBg,
+  color: theme.color.sidebarText,
+  borderRight: `1px solid ${theme.color.sidebarBorder}`,
+  padding: "1rem 0.75rem",
+  fontFamily: theme.font.family,
+  boxSizing: "border-box",
+};
+
 const rowBase: CSSProperties = {
   display: "flex",
   alignItems: "center",
-  padding: "0.35rem 0.5rem",
-  borderRadius: "4px",
+  padding: "0.5rem 0.65rem",
+  borderRadius: theme.radius.md,
   cursor: "pointer",
   userSelect: "none",
+  transition: "background 120ms",
 };
 
-const sectionRowStyle = (selected: boolean): CSSProperties => ({
+// `active` covers hover + "parent section of the selected item" — both
+// states surface the same subtle sidebarHoverBg, so a section row lights
+// up whenever the user is hovering it OR has selected one of its items.
+const sectionRowStyle = (selected: boolean, active: boolean): CSSProperties => ({
   ...rowBase,
-  marginTop: "0.25rem",
+  marginTop: "0.35rem",
   fontSize: "0.92rem",
-  fontWeight: selected ? 700 : 600,
-  background: selected ? "#e6f0ff" : "transparent",
-  color: selected ? "#0b4cb1" : "#1a1a1a",
+  fontWeight: 600,
+  background: selected
+    ? theme.color.sidebarSelectedBg
+    : active
+      ? theme.color.sidebarHoverBg
+      : "transparent",
+  color: selected
+    ? theme.color.sidebarSelectedText
+    : theme.color.sidebarText,
   justifyContent: "space-between",
+  gap: "0.3rem",
 });
 
-const itemRowStyle = (selected: boolean): CSSProperties => ({
+const itemRowStyle = (selected: boolean, active: boolean): CSSProperties => ({
   ...rowBase,
   marginLeft: "1.5rem",
+  marginTop: "0.2rem",
   fontSize: "0.85rem",
-  background: selected ? "#e6f0ff" : "transparent",
-  color: selected ? "#0b4cb1" : "#1a1a1a",
-  fontWeight: selected ? 600 : 400,
+  background: selected
+    ? theme.color.sidebarSelectedBg
+    : active
+      ? theme.color.sidebarHoverBg
+      : "transparent",
+  // Item names sit second in the visual hierarchy after section names:
+  // a soft off-white — brighter than the muted icons but quieter than
+  // the section title.
+  color: selected ? theme.color.sidebarSelectedText : "#D2D5E5",
+  fontWeight: selected ? 600 : 500,
   justifyContent: "space-between",
+  gap: "0.3rem",
 });
 
 const addItemButtonStyle: CSSProperties = {
-  display: "block",
-  marginLeft: "1.5rem",
-  marginTop: "0.2rem",
-  padding: "0.2rem 0.5rem",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "0.35rem",
+  // Align the dashed border with where the item NAME starts (not just
+  // the drag handle). Item-row text begins at: marginLeft 1.5rem +
+  // padding-left 0.65rem + drag-handle (~1.25rem) + 2px margin ≈ 3.5rem.
+  marginLeft: "3.5rem",
+  marginTop: "0.4rem",
+  padding: "0.3rem 0.6rem",
   fontSize: "0.78rem",
   background: "transparent",
-  border: "1px dashed #aaa",
-  borderRadius: "3px",
-  color: "#555",
+  border: `1px dashed ${theme.color.sidebarTextMuted}`,
+  borderRadius: theme.radius.sm,
+  color: theme.color.sidebarTextMuted,
   cursor: "pointer",
+  fontFamily: theme.font.family,
 };
 
-const chevronStyle: CSSProperties = {
-  display: "inline-block",
-  width: "0.85rem",
-  marginRight: "0.25rem",
-  textAlign: "center",
-  fontSize: "0.7rem",
-  color: "#555",
+const iconBtnBase: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  border: "none",
+  background: "transparent",
+  borderRadius: theme.radius.sm,
+  cursor: "pointer",
+  padding: "3px",
+  flexShrink: 0,
 };
 
 const dragHandleStyle: CSSProperties = {
-  display: "inline-block",
-  width: "0.9rem",
-  marginRight: "0.15rem",
-  textAlign: "center",
-  fontSize: "0.85rem",
-  color: "#888",
+  ...iconBtnBase,
   cursor: "grab",
-  userSelect: "none",
+  color: theme.color.sidebarTextMuted,
+  marginRight: "2px",
 };
 
-const deleteButtonStyle: CSSProperties = {
-  border: "none",
-  background: "transparent",
-  color: "#a52a2a",
-  cursor: "pointer",
-  padding: "0 0.3rem",
-  fontSize: "1rem",
-  lineHeight: 1,
-  borderRadius: "3px",
-};
-
-const eyeButtonStyle: CSSProperties = {
-  border: "none",
-  background: "transparent",
-  color: "#555",
-  cursor: "pointer",
-  padding: "0 0.2rem",
-  display: "inline-flex",
+const addSectionButtonStyle: CSSProperties = {
+  display: "flex",
   alignItems: "center",
-  lineHeight: 1,
-  borderRadius: "3px",
-};
-
-function EyeIcon({ open }: { open: boolean }) {
-  // Inline SVG version of lucide's eye / eye-off (no extra dep).
-  const common = {
-    width: 14,
-    height: 14,
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: 2,
-    strokeLinecap: "round" as const,
-    strokeLinejoin: "round" as const,
-  };
-  if (open) {
-    return (
-      <svg {...common}>
-        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" />
-        <circle cx="12" cy="12" r="3" />
-      </svg>
-    );
-  }
-  return (
-    <svg {...common}>
-      <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
-      <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
-      <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
-      <line x1="2" y1="2" x2="22" y2="22" />
-    </svg>
-  );
-}
-
-const addButtonStyle: CSSProperties = {
-  display: "block",
+  justifyContent: "center",
+  gap: "0.4rem",
   width: "100%",
-  marginTop: "1rem",
-  padding: "0.5rem",
-  fontSize: "0.85rem",
+  marginTop: "1.25rem",
+  padding: "0.65rem",
+  fontSize: "0.86rem",
   fontWeight: 600,
-  background: "#ffffff",
-  border: "1px dashed #888",
-  borderRadius: "5px",
-  color: "#333",
+  background: "transparent",
+  border: `1px dashed ${theme.color.sidebarTextMuted}`,
+  borderRadius: theme.radius.md,
+  color: theme.color.sidebarText,
   cursor: "pointer",
+  fontFamily: theme.font.family,
 };
 
 const pickerStyle: CSSProperties = {
   marginTop: "0.5rem",
   padding: "0.5rem",
-  background: "#ffffff",
-  border: "1px solid #ccc",
-  borderRadius: "5px",
+  background: "rgba(255, 255, 255, 0.04)",
+  border: `1px solid ${theme.color.sidebarBorder}`,
+  borderRadius: theme.radius.md,
 };
 
 const pickerOptionStyle: CSSProperties = {
   display: "block",
   width: "100%",
   textAlign: "left",
-  padding: "0.4rem 0.5rem",
+  padding: "0.5rem 0.6rem",
   border: "none",
   background: "transparent",
-  borderRadius: "3px",
+  borderRadius: theme.radius.sm,
   fontSize: "0.85rem",
+  color: theme.color.sidebarText,
   cursor: "pointer",
+  fontFamily: theme.font.family,
 };
 
 // -- sortable item row --------------------------------------------------
@@ -236,38 +236,30 @@ function SortableItemRow({
     itemId: item.id,
   });
   const label = itemLabel(section, item.id);
+  const [hovered, setHovered] = useState(false);
 
   const wrapperStyle: CSSProperties = {
-    ...itemRowStyle(itemSelected),
+    ...itemRowStyle(itemSelected, hovered),
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
-    background: isDragging ? "#e8edf2" : itemRowStyle(itemSelected).background,
   };
 
-  function handleRemove() {
-    const confirmed = window.confirm(`Remove "${label || "untitled"}"?`);
-    if (!confirmed) return;
-    setResume((r) => withItemRemoved(r, section.id, item.id));
-    if (
-      selection.kind === "item" &&
-      selection.sectionId === section.id &&
-      selection.itemId === item.id
-    ) {
-      useStore.getState().selectNone();
-    }
-  }
-
   return (
-    <div ref={setNodeRef} style={wrapperStyle}>
+    <div
+      ref={setNodeRef}
+      style={wrapperStyle}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
       <span
         {...attributes}
         {...listeners}
-        style={{ ...dragHandleStyle, fontSize: "0.75rem" }}
+        style={dragHandleStyle}
         title="Drag to reorder"
         aria-label={`Drag handle for ${label}`}
       >
-        ⋮⋮
+        <GripVertical size={14} />
       </span>
       <div
         onClick={() => selectItem(section.id, item.id)}
@@ -279,20 +271,39 @@ function SortableItemRow({
           whiteSpace: "nowrap",
         }}
       >
-        {label || <em style={{ color: "#888" }}>untitled</em>}
+        {label || (
+          <em style={{ color: theme.color.sidebarTextMuted }}>untitled</em>
+        )}
       </div>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          handleRemove();
+      <InlineConfirm
+        ariaLabel={`remove ${label || "item"}`}
+        onConfirm={() => {
+          setResume((r) => withItemRemoved(r, section.id, item.id));
+          if (
+            selection.kind === "item" &&
+            selection.sectionId === section.id &&
+            selection.itemId === item.id
+          ) {
+            useStore.getState().selectNone();
+          }
         }}
-        style={deleteButtonStyle}
-        title="Remove item"
-        aria-label={`Remove ${label}`}
-      >
-        ×
-      </button>
+        trigger={({ onClick }) => (
+          <button
+            type="button"
+            onClick={onClick}
+            style={{
+              ...iconBtnBase,
+              color: itemSelected
+                ? "rgba(255,255,255,0.85)"
+                : theme.color.sidebarTextMuted,
+            }}
+            title="Remove item"
+            aria-label={`Remove ${label}`}
+          >
+            <Trash2 size={14} />
+          </button>
+        )}
+      />
     </div>
   );
 }
@@ -320,43 +331,31 @@ function SortableSectionBlock({ section }: { section: Section }) {
     kind: "section",
     sectionId: section.id,
   });
+  // Treat the section as "active" when one of its items is the current
+  // selection — this surfaces the parent context without overriding the
+  // bold gradient that marks the actual selection target.
+  const hasSelectedChild =
+    selection.kind === "item" && selection.sectionId === section.id;
+  const [hovered, setHovered] = useState(false);
   const isExpanded = expanded.has(section.id);
 
   const wrapperStyle: CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : section.hidden ? 0.55 : 1,
-    background: isDragging ? "#e8edf2" : "transparent",
-    borderRadius: "4px",
+    borderRadius: theme.radius.md,
+    borderTop: `1px solid ${theme.color.sidebarBorder}`,
+    paddingTop: "1rem",
+    marginTop: "1rem",
   };
-
-  function handleToggleHidden() {
-    setResume((r) => withSectionHiddenToggled(r, section.id));
-  }
-
-  function handleRemove() {
-    const confirmed = window.confirm(
-      `Remove section "${section.title}" and all its items? Revert with git checkout data/resume.json if needed.`,
-    );
-    if (!confirmed) return;
-    setResume((r) => withSectionRemoved(r, section.id));
-    if (selection.kind === "section" && selection.sectionId === section.id) {
-      useStore.getState().selectNone();
-    }
-    if (selection.kind === "item" && selection.sectionId === section.id) {
-      useStore.getState().selectNone();
-    }
-  }
-
-  function handleAddItem() {
-    const itemId = `item-${Date.now()}`;
-    setResume((r) => withItemAdded(r, section.id, itemId));
-    selectItem(section.id, itemId);
-  }
 
   return (
     <div ref={setNodeRef} style={wrapperStyle}>
-      <div style={sectionRowStyle(sectionSelected)}>
+      <div
+        style={sectionRowStyle(sectionSelected, hovered || hasSelectedChild)}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+      >
         <span
           {...attributes}
           {...listeners}
@@ -364,7 +363,7 @@ function SortableSectionBlock({ section }: { section: Section }) {
           title="Drag to reorder"
           aria-label={`Drag handle for ${section.title}`}
         >
-          ⋮⋮
+          <GripVertical size={14} />
         </span>
         <div
           onClick={() => {
@@ -376,9 +375,24 @@ function SortableSectionBlock({ section }: { section: Section }) {
             alignItems: "center",
             flex: 1,
             minWidth: 0,
+            gap: "0.25rem",
           }}
         >
-          <span style={chevronStyle}>{isExpanded ? "▾" : "▸"}</span>
+          <span
+            style={{
+              display: "inline-flex",
+              opacity: 0.7,
+              color: sectionSelected
+                ? "rgba(255,255,255,0.9)"
+                : theme.color.sidebarTextMuted,
+            }}
+          >
+            {isExpanded ? (
+              <ChevronDown size={14} />
+            ) : (
+              <ChevronRight size={14} />
+            )}
+          </span>
           <span
             style={{
               overflow: "hidden",
@@ -394,9 +408,18 @@ function SortableSectionBlock({ section }: { section: Section }) {
           type="button"
           onClick={(e) => {
             e.stopPropagation();
-            handleToggleHidden();
+            setResume((r) => withSectionHiddenToggled(r, section.id));
           }}
-          style={eyeButtonStyle}
+          style={{
+            ...iconBtnBase,
+            // Open eye = visible in PDF → green status color.
+            // Closed eye = hidden → stays muted gray.
+            color: section.hidden
+              ? sectionSelected
+                ? "rgba(255,255,255,0.85)"
+                : theme.color.sidebarTextMuted
+              : "#22C55E",
+          }}
           title={section.hidden ? "Show in PDF" : "Hide from PDF"}
           aria-label={
             section.hidden
@@ -404,20 +427,42 @@ function SortableSectionBlock({ section }: { section: Section }) {
               : `Hide ${section.title} from PDF`
           }
         >
-          <EyeIcon open={!section.hidden} />
+          {section.hidden ? <EyeOff size={14} /> : <Eye size={14} />}
         </button>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleRemove();
+        <InlineConfirm
+          ariaLabel={`remove section ${section.title}`}
+          onConfirm={() => {
+            setResume((r) => withSectionRemoved(r, section.id));
+            if (
+              selection.kind === "section" &&
+              selection.sectionId === section.id
+            ) {
+              useStore.getState().selectNone();
+            }
+            if (
+              selection.kind === "item" &&
+              selection.sectionId === section.id
+            ) {
+              useStore.getState().selectNone();
+            }
           }}
-          style={deleteButtonStyle}
-          title="Remove section"
-          aria-label={`Remove section ${section.title}`}
-        >
-          ×
-        </button>
+          trigger={({ onClick }) => (
+            <button
+              type="button"
+              onClick={onClick}
+              style={{
+                ...iconBtnBase,
+                color: sectionSelected
+                  ? "rgba(255,255,255,0.85)"
+                  : theme.color.sidebarTextMuted,
+              }}
+              title="Remove section"
+              aria-label={`Remove section ${section.title}`}
+            >
+              <Trash2 size={14} />
+            </button>
+          )}
+        />
       </div>
 
       {isExpanded ? (
@@ -427,19 +472,20 @@ function SortableSectionBlock({ section }: { section: Section }) {
             strategy={verticalListSortingStrategy}
           >
             {section.items.map((item) => (
-              <SortableItemRow
-                key={item.id}
-                section={section}
-                item={item}
-              />
+              <SortableItemRow key={item.id} section={section} item={item} />
             ))}
           </SortableContext>
           <button
             type="button"
-            onClick={handleAddItem}
+            onClick={() => {
+              const itemId = `item-${Date.now()}`;
+              setResume((r) => withItemAdded(r, section.id, itemId));
+              selectItem(section.id, itemId);
+            }}
             style={addItemButtonStyle}
           >
-            + Add item
+            <Plus size={12} />
+            Add item
           </button>
         </>
       ) : null}
@@ -464,8 +510,6 @@ export function Sidebar({ resume }: { resume: Resume }) {
 
   const [pickerOpen, setPickerOpen] = useState(false);
 
-  // PointerSensor with a small activation distance so plain clicks on the
-  // handle don't accidentally start a drag.
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
@@ -475,7 +519,6 @@ export function Sidebar({ resume }: { resume: Resume }) {
     const overId = event.over ? String(event.over.id) : null;
     if (!overId || activeId === overId) return;
 
-    // Section drag: both ids share the section prefix.
     if (
       activeId.startsWith(SECTION_PREFIX) &&
       overId.startsWith(SECTION_PREFIX)
@@ -489,8 +532,6 @@ export function Sidebar({ resume }: { resume: Resume }) {
       return;
     }
 
-    // Item drag: both ids share the item prefix. Cross-section is rejected
-    // here by checking that both items belong to the same parent section.
     if (activeId.startsWith(ITEM_PREFIX) && overId.startsWith(ITEM_PREFIX)) {
       const fromItemId = activeId.slice(ITEM_PREFIX.length);
       const toItemId = overId.slice(ITEM_PREFIX.length);
@@ -500,10 +541,8 @@ export function Sidebar({ resume }: { resume: Resume }) {
       if (!section) return;
       const fromIdx = section.items.findIndex((i) => i.id === fromItemId);
       const toIdx = section.items.findIndex((i) => i.id === toItemId);
-      if (fromIdx < 0 || toIdx < 0) return; // cross-section drag — no-op
-      setResume((r) =>
-        withItemsReordered(r, section.id, fromIdx, toIdx),
-      );
+      if (fromIdx < 0 || toIdx < 0) return;
+      setResume((r) => withItemsReordered(r, section.id, fromIdx, toIdx));
     }
   }
 
@@ -514,32 +553,62 @@ export function Sidebar({ resume }: { resume: Resume }) {
     selectSection(id);
   }
 
+  const headerSelected = isSelected(selection, { kind: "header" });
+  const [headerHovered, setHeaderHovered] = useState(false);
+
   return (
-    <nav
-      style={{
-        width: "260px",
-        flexShrink: 0,
-        height: "100%",
-        overflowY: "auto",
-        background: "#f5f6f8",
-        borderRight: "1px solid #d0d0d0",
-        padding: "0.75rem 0.5rem",
-        fontFamily: "system-ui, sans-serif",
-        boxSizing: "border-box",
-      }}
-    >
+    <nav style={navStyle}>
+      <div style={{ padding: "0 0.4rem 0.95rem" }}>
+        <div
+          style={{
+            fontSize: "0.95rem",
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "0.6px",
+            color: theme.color.sidebarText,
+            textAlign: "center",
+          }}
+        >
+          Resume Structure
+        </div>
+        <div
+          style={{
+            fontSize: "0.78rem",
+            color: theme.color.sidebarTextMuted,
+            marginTop: "0.6rem",
+            lineHeight: 1.4,
+            textAlign: "center",
+          }}
+        >
+          Select a section or item to edit.
+        </div>
+      </div>
       <button
         type="button"
         onClick={selectHeader}
+        onMouseEnter={() => setHeaderHovered(true)}
+        onMouseLeave={() => setHeaderHovered(false)}
         style={{
-          ...sectionRowStyle(isSelected(selection, { kind: "header" })),
+          ...sectionRowStyle(headerSelected, headerHovered),
           width: "100%",
           border: "none",
           textAlign: "left",
           justifyContent: "flex-start",
+          fontFamily: theme.font.family,
+          marginTop: 0,
+          gap: "0.4rem",
         }}
       >
-        <span style={chevronStyle}> </span>
+        <span
+          style={{
+            display: "inline-flex",
+            color: headerSelected
+              ? "rgba(255,255,255,0.9)"
+              : theme.color.sidebarTextMuted,
+          }}
+        >
+          <UserRound size={15} />
+        </span>
         Header
       </button>
 
@@ -561,9 +630,10 @@ export function Sidebar({ resume }: { resume: Resume }) {
       <button
         type="button"
         onClick={() => setPickerOpen((open) => !open)}
-        style={addButtonStyle}
+        style={addSectionButtonStyle}
       >
-        {pickerOpen ? "Cancel" : "+ Add section"}
+        <Plus size={14} />
+        {pickerOpen ? "Cancel" : "Add section"}
       </button>
 
       {pickerOpen ? (
@@ -575,7 +645,7 @@ export function Sidebar({ resume }: { resume: Resume }) {
               onClick={() => handleAddSection(type)}
               style={pickerOptionStyle}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#eef2f6";
+                e.currentTarget.style.background = theme.color.sidebarHoverBg;
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "transparent";

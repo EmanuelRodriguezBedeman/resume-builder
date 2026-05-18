@@ -4,6 +4,59 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Resume Builder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      html,
+      body,
+      #root {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+      }
+      body {
+        font-family:
+          "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        font-feature-settings: "cv11", "ss01";
+        -webkit-font-smoothing: antialiased;
+      }
+      /* Dark form-panel inputs need a visible placeholder. */
+      aside input::placeholder,
+      aside textarea::placeholder {
+        color: rgba(255, 255, 255, 0.4);
+      }
+      /* Modern thin scrollbar — neutral indigo-gray, works on both the
+         dark editor panels and the light preview background. */
+      *::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+      *::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      *::-webkit-scrollbar-thumb {
+        background-color: rgba(190, 196, 222, 0.6);
+        border-radius: 10px;
+        border: 2px solid transparent;
+        background-clip: padding-box;
+      }
+      *::-webkit-scrollbar-thumb:hover {
+        background-color: rgba(210, 215, 235, 0.8);
+        background-clip: padding-box;
+      }
+      *::-webkit-scrollbar-corner {
+        background: transparent;
+      }
+      /* Firefox */
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(190, 196, 222, 0.65) transparent;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

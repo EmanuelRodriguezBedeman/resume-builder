@@ -19,6 +19,9 @@ type Store = {
   state: ResumeState;
   selection: Selection;
   expandedSections: Set<string>;
+  // The right form panel is collapsible. Starts collapsed; auto-expands
+  // when the user picks something from the sidebar.
+  panelCollapsed: boolean;
 
   // Resume lifecycle
   setLoaded: (resume: Resume) => void;
@@ -36,6 +39,10 @@ type Store = {
   selectSection: (sectionId: string) => void;
   selectItem: (sectionId: string, itemId: string) => void;
 
+  // Panel collapse actions
+  setPanelCollapsed: (collapsed: boolean) => void;
+  togglePanelCollapsed: () => void;
+
   // Sidebar tree state
   toggleSectionExpanded: (sectionId: string) => void;
 };
@@ -47,6 +54,7 @@ export const useStore = create<Store>((set) => ({
   state: { status: "loading" },
   selection: { kind: "none" },
   expandedSections: new Set<string>(),
+  panelCollapsed: true,
 
   setLoaded: (resume) =>
     set({
@@ -75,11 +83,25 @@ export const useStore = create<Store>((set) => ({
     }),
 
   selectNone: () => set({ selection: { kind: "none" } }),
-  selectHeader: () => set({ selection: { kind: "header" } }),
+  // Selecting anything in the sidebar auto-expands the form panel — this
+  // is the only flow that opens it automatically. Manual collapse via the
+  // chevron button does not clear the selection.
+  selectHeader: () =>
+    set({ selection: { kind: "header" }, panelCollapsed: false }),
   selectSection: (sectionId) =>
-    set({ selection: { kind: "section", sectionId } }),
+    set({
+      selection: { kind: "section", sectionId },
+      panelCollapsed: false,
+    }),
   selectItem: (sectionId, itemId) =>
-    set({ selection: { kind: "item", sectionId, itemId } }),
+    set({
+      selection: { kind: "item", sectionId, itemId },
+      panelCollapsed: false,
+    }),
+
+  setPanelCollapsed: (collapsed) => set({ panelCollapsed: collapsed }),
+  togglePanelCollapsed: () =>
+    set((prev) => ({ panelCollapsed: !prev.panelCollapsed })),
 
   toggleSectionExpanded: (sectionId) =>
     set((prev) => {

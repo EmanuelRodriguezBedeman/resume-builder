@@ -460,3 +460,61 @@ export function withDescriptionBlock(
     return s;
   });
 }
+
+export function withDescriptionBlockAdded(
+  resume: Resume,
+  sectionId: string,
+  itemId: string,
+  block: DescriptionBlock,
+): Resume {
+  return mapSection(resume, sectionId, (s) => {
+    if (s.type === "timeline") {
+      return {
+        ...s,
+        items: mapItems(s.items, itemId, (i) => ({
+          ...i,
+          description: [...i.description, block],
+        })),
+      };
+    }
+    if (s.type === "showcase") {
+      return {
+        ...s,
+        items: mapItems(s.items, itemId, (i) => ({
+          ...i,
+          description: [...i.description, block],
+        })),
+      };
+    }
+    return s;
+  });
+}
+
+export function withDescriptionBlockRemoved(
+  resume: Resume,
+  sectionId: string,
+  itemId: string,
+  blockIdx: number,
+): Resume {
+  return mapSection(resume, sectionId, (s) => {
+    if (s.type === "timeline") {
+      return {
+        ...s,
+        items: mapItems(s.items, itemId, (i) => ({
+          ...i,
+          description: i.description.filter((_, idx) => idx !== blockIdx),
+        })),
+      };
+    }
+    if (s.type === "showcase") {
+      return {
+        ...s,
+        items: mapItems(s.items, itemId, (i) => ({
+          ...i,
+          description: i.description.filter((_, idx) => idx !== blockIdx),
+        })),
+      };
+    }
+    return s;
+  });
+}
