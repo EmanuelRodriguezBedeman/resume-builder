@@ -1,37 +1,51 @@
 import { Hono } from "hono";
 import { serveStatic } from "@hono/node-server/serve-static";
-import { readResume, writeResume, type Resume } from "./storage.ts";
+import {
+  readBothLocales,
+  writeLocale,
+  type Locale,
+  type Resume,
+} from "./storage.ts";
 
-export function createApp(dataFile: string) {
+const ENVELOPE_SCHEMA_VERSION = 1;
+
+function isLocale(v: unknown): v is Locale {
+  return v === "en" || v === "es";
+}
+
+export function createApp(dataDir: string) {
   const app = new Hono();
 
   app.get("/health", (c) => c.json({ ok: true }));
 
   app.get("/resume", async (c) => {
     try {
-      const resume = await readResume(dataFile);
-      return c.json({ resume });
+      const locales = await readBothLocales(dataDir);
+      return c.json({ schemaVersion: ENVELOPE_SCHEMA_VERSION, locales });
     } catch (err) {
-      console.error("[server] readResume failed:", err);
+      console.error("[server] readBothLocales failed:", err);
       return c.json({ error: "read_failed" }, 500);
     }
   });
 
   app.post("/resume", async (c) => {
-    let body: { resume?: Resume };
+    let body: { locale?: unknown; resume?: Resume };
     try {
       body = await c.req.json();
     } catch {
       return c.json({ error: "invalid_json" }, 400);
     }
+    if (!isLocale(body.locale)) {
+      return c.json({ error: "invalid_locale" }, 400);
+    }
     if (!body.resume) {
       return c.json({ error: "missing_resume_field" }, 400);
     }
     try {
-      await writeResume(dataFile, body.resume);
+      await writeLocale(dataDir, body.locale, body.resume);
       return c.json({ ok: true });
     } catch (err) {
-      console.error("[server] writeResume failed:", err);
+      console.error("[server] writeLocale failed:", err);
       return c.json({ error: "write_failed" }, 500);
     }
   });
