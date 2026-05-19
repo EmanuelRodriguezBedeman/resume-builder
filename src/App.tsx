@@ -1,7 +1,7 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { pdf } from "@react-pdf/renderer";
 import JSZip from "jszip";
-import { Download, FileText } from "lucide-react";
+import { AlertTriangle, Download, FileText } from "lucide-react";
 import { Resume } from "./pdf/Resume.tsx";
 import { HtmlPreview } from "./preview/HtmlPreview.tsx";
 import { FormPanel } from "./components/FormPanel.tsx";
@@ -130,6 +130,26 @@ const loadingScreenStyle: CSSProperties = {
   color: theme.color.textMuted,
 };
 
+const toastStyle: CSSProperties = {
+  position: "fixed",
+  bottom: "1.5rem",
+  right: "1.5rem",
+  display: "flex",
+  alignItems: "center",
+  gap: "0.5rem",
+  padding: "0.75rem 1.1rem",
+  borderRadius: theme.radius.card,
+  background: theme.color.panelCardBg,
+  border: `1px solid ${theme.color.danger}`,
+  color: theme.color.danger,
+  fontSize: "0.82rem",
+  fontFamily: theme.font.family,
+  fontWeight: 500,
+  zIndex: 9999,
+  boxShadow: "0 4px 20px rgba(0, 0, 0, 0.4)",
+  pointerEvents: "none",
+};
+
 type Envelope = { schemaVersion: number; locales: LocalesBundle };
 
 export function App() {
@@ -222,6 +242,25 @@ function ExportButton({ locales }: { locales: LocalesBundle }) {
   );
 }
 
+function TranslationErrorToast() {
+  const msg = useStore((s) => s.translationErrorMsg);
+  const setMsg = useStore((s) => s.setTranslationErrorMsg);
+
+  useEffect(() => {
+    if (!msg) return;
+    const t = setTimeout(() => setMsg(null), 4000);
+    return () => clearTimeout(t);
+  }, [msg, setMsg]);
+
+  if (!msg) return null;
+  return (
+    <div style={toastStyle} role="alert" aria-live="assertive">
+      <AlertTriangle size={14} strokeWidth={2} />
+      {msg}
+    </div>
+  );
+}
+
 function LocaleToggle() {
   const activeLocale = useStore((s) => s.activeLocale);
   const setActiveLocale = useStore((s) => s.setActiveLocale);
@@ -258,6 +297,7 @@ function LoadedApp({
   // so this component just hands `locales` to the Export button.
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
+      <TranslationErrorToast />
       <div style={toolbarStyle}>
         <span style={brandStyle}>
           <span style={brandIconStyle}>

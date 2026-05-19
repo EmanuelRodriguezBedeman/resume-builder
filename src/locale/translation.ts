@@ -127,7 +127,8 @@ export type TranslationCommit = {
  */
 export async function commitTranslation(c: TranslationCommit): Promise<void> {
   const { path, newActiveValue, peerValueAtAttempt, applyTranslation } = c;
-  const { activeLocale, setTranslationHashes } = useStore.getState();
+  const { activeLocale, setTranslationHashes, setTranslationPending, setTranslationErrorMsg } =
+    useStore.getState();
   const peerLocale: Locale = activeLocale === "en" ? "es" : "en";
 
   if (newActiveValue.trim() === "") {
@@ -138,6 +139,7 @@ export async function commitTranslation(c: TranslationCommit): Promise<void> {
     return;
   }
 
+  setTranslationPending(path, true);
   try {
     const res = await fetch("/translate", {
       method: "POST",
@@ -157,5 +159,8 @@ export async function commitTranslation(c: TranslationCommit): Promise<void> {
     setTranslationHashes(path, {
       [activeLocale]: hashText(peerValueAtAttempt),
     });
+    setTranslationErrorMsg("Translation failed — click ⚠ to retry");
+  } finally {
+    setTranslationPending(path, false);
   }
 }

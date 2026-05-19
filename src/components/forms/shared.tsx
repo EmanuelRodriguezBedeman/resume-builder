@@ -1,5 +1,5 @@
-import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
-import { AlertTriangle, Plus, X } from "lucide-react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+import { AlertTriangle, Loader2, Plus, X } from "lucide-react";
 import type {
   DateRange,
   DescriptionBlock,
@@ -125,6 +125,36 @@ const labelTextStyle: CSSProperties = {
   fontFamily: theme.font.family,
 };
 
+// Small rotating spinner shown in the field label row while a translation
+// fetch is in-flight. Uses requestAnimationFrame for smooth rotation
+// without a CSS file (the rest of the UI is all inline styles).
+function TranslatingSpinner() {
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    let frameId: number;
+    let startTs: number | null = null;
+    const tick = (ts: number) => {
+      if (startTs === null) startTs = ts;
+      const deg = (((ts - startTs) / 1000) * 360) % 360;
+      if (ref.current) ref.current.style.transform = `rotate(${deg}deg)`;
+      frameId = requestAnimationFrame(tick);
+    };
+    frameId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frameId);
+  }, []);
+  return (
+    <span
+      style={{ display: "inline-flex", alignItems: "center", color: theme.color.primary, opacity: 0.75 }}
+      title="Translating…"
+      aria-label="Translation in progress"
+    >
+      <span ref={ref} style={{ display: "inline-flex" }}>
+        <Loader2 size={12} strokeWidth={2.25} />
+      </span>
+    </span>
+  );
+}
+
 // Soft danger-color treatment per design-system §4: small icon, rose-500
 // (not alarm-red), no background fill. Acts as a button so the click
 // reaches `onRetry` — but visually it reads as a status indicator that
@@ -174,10 +204,14 @@ function useTranslationField(
   const hashes = useStore((s) =>
     translation ? s.translationHashes[translation.path] : undefined,
   );
+  const translating = useStore((s) =>
+    translation ? s.translationPending.has(translation.path) : false,
+  );
 
   if (!translation) {
     return {
       peerIsStale: false,
+      translating: false,
       runCommit: (_v: string) => {},
     };
   }
@@ -194,7 +228,7 @@ function useTranslationField(
       peerValueAtAttempt: translation.peerValue,
       applyTranslation: translation.applyTranslation,
     });
-  return { peerIsStale, runCommit };
+  return { peerIsStale, translating, runCommit };
 }
 
 // -- Text input ---------------------------------------------------------
@@ -213,12 +247,16 @@ export function TextField({
   translation?: TranslationProps;
 }) {
   const focusValueRef = useRef<string | null>(null);
-  const { peerIsStale, runCommit } = useTranslationField(translation, value);
+  const { peerIsStale, translating, runCommit } = useTranslationField(translation, value);
   return (
     <div style={fieldGroupStyle}>
       <div style={labelRowStyle}>
         <span style={labelTextStyle}>{label}</span>
-        {peerIsStale ? <StaleMarker onRetry={() => runCommit(value)} /> : null}
+        {translating ? (
+          <TranslatingSpinner />
+        ) : peerIsStale ? (
+          <StaleMarker onRetry={() => runCommit(value)} />
+        ) : null}
       </div>
       <input
         type="text"
@@ -259,7 +297,7 @@ export function TextAreaField({
 }) {
   const ref = useRef<HTMLTextAreaElement>(null);
   const focusValueRef = useRef<string | null>(null);
-  const { peerIsStale, runCommit } = useTranslationField(translation, value);
+  const { peerIsStale, translating, runCommit } = useTranslationField(translation, value);
   // Auto-grow to fit content. Runs before paint to avoid flash.
   useLayoutEffect(() => {
     const el = ref.current;
@@ -271,7 +309,11 @@ export function TextAreaField({
     <div style={fieldGroupStyle}>
       <div style={labelRowStyle}>
         <span style={labelTextStyle}>{label}</span>
-        {peerIsStale ? <StaleMarker onRetry={() => runCommit(value)} /> : null}
+        {translating ? (
+          <TranslatingSpinner />
+        ) : peerIsStale ? (
+          <StaleMarker onRetry={() => runCommit(value)} />
+        ) : null}
       </div>
       <textarea
         ref={ref}

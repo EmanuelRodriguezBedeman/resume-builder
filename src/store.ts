@@ -51,6 +51,12 @@ type Store = {
   // semantic model. Empty by default; populated by the blur-time commit
   // pipeline and read by the stale-marker UI.
   translationHashes: TranslationHashes;
+  // Paths whose translation fetch is currently in-flight. Read by the
+  // field UI to render a spinner instead of the stale marker.
+  translationPending: Set<TranslationPath>;
+  // Ephemeral error message shown as a toast when a translation fails.
+  // Auto-cleared by the toast component after a few seconds.
+  translationErrorMsg: string | null;
 
   // Resume lifecycle
   setLoaded: (locales: LocalesBundle) => void;
@@ -82,6 +88,8 @@ type Store = {
   // undefined remove the entry on read (isFieldStale treats undefined as
   // "no recorded hash").
   setTranslationHashes: (path: TranslationPath, patch: FieldHash) => void;
+  setTranslationPending: (path: TranslationPath, pending: boolean) => void;
+  setTranslationErrorMsg: (msg: string | null) => void;
 
   // Selection actions
   selectNone: () => void;
@@ -141,6 +149,8 @@ export const useStore = create<Store>((set) => ({
   formPanelWidth: 380,
   hovered: { kind: "none" },
   translationHashes: {},
+  translationPending: new Set<TranslationPath>(),
+  translationErrorMsg: null,
 
   setLoaded: (locales) =>
     set((prev) => ({
@@ -206,6 +216,16 @@ export const useStore = create<Store>((set) => ({
         [path]: { ...prev.translationHashes[path], ...patch },
       },
     })),
+
+  setTranslationPending: (path, pending) =>
+    set((prev) => {
+      const next = new Set(prev.translationPending);
+      if (pending) next.add(path);
+      else next.delete(path);
+      return { translationPending: next };
+    }),
+
+  setTranslationErrorMsg: (msg) => set({ translationErrorMsg: msg }),
 
   selectNone: () => set({ selection: { kind: "none" } }),
   // Selecting anything in the sidebar auto-expands the form panel — this

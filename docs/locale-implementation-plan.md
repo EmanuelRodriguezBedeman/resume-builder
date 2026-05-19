@@ -313,7 +313,7 @@ Commit with `feat(locale): ZIP export of both locale PDFs` and push.
 
 ## Slice 8 — Polish
 
-- [ ] **Slice complete**
+- [x] **Slice complete**
 
 Sub-tasks:
 - [ ] Loading indicator on inputs while their translation is in-flight (small inline spinner).
