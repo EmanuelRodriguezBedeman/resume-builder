@@ -14,11 +14,26 @@ For each slice:
 
 ## Parallelism
 
-**Default: sequential.** Slices share files (`src/store.ts`, form components, `src/types.ts`), so parallel branches would conflict.
+Slices 1 and 2 are strictly sequential. After Slice 2 lands, the dependency graph fans out:
 
-**Exception worth doing in parallel:** **Slice 4 (DeepL backend)** is isolated in `server/`. If you want to save wall-clock time, you can run Slice 4 in a separate worktree / branch alongside Slice 2 or 3. They won't conflict.
+```
+                 ┌─ Slice 3 (store, forms, Sidebar)
+1 → 2 → ─────────┼─ Slice 4 (server/, render.yaml)         ← 0 file overlap with 3, 7
+                 └─ Slice 7 (src/pdf/, src/App.tsx)         ← touches App.tsx
 
-Slice 7 (ZIP export) is also semi-independent but reads the locale shape introduced in Slice 1+2, so do it after at least Slice 2.
+Slice 5 needs both 3 and 4. Slice 6 needs 4 (and reuses 3's classification). Slice 8 is last.
+```
+
+**Safe parallel pairs after Slice 2 lands:**
+- **Slice 3 ‖ Slice 4** — recommended. Zero file overlap.
+- **Slice 4 ‖ Slice 7** — safe. Zero file overlap.
+- **Slice 3 ‖ Slice 7** — possible, but **both can touch `src/App.tsx`**. Slice 3 normally doesn't, but if it migrates the toolbar's `setResume` call sites or the Export region, you'll merge by hand. Slice 7 definitely modifies the Export handler.
+
+**Worktrees:** for true parallel work, use `git worktree add`:
+```
+git worktree add ../resume-builder-slice4 -b slice/4-deepl HEAD
+```
+Base from **local `main`** (the latest `feat(locale): …` commit), **not from `origin/main`** — Slices 1+2 may not be pushed yet, so `origin/main` is behind. Verify with `git log --oneline -5` before branching off.
 
 ## Required context for every slice
 
@@ -27,7 +42,15 @@ Before starting any slice, make sure the agent reads:
 - [CONTEXT.md](../CONTEXT.md) — domain glossary (terms: `Locale`, `Active locale`, `Translatable field`, `Shared field`, `Stale field`)
 - [docs/adr/0004-multi-locale-resume.md](./adr/0004-multi-locale-resume.md) — decisions and rationale
 - [docs/design-system.md](./design-system.md) — UI/visual conventions
-- This file — to see which slice and what comes next
+- This file — to see which slice and what comes next, plus the "Repo gotchas" section below
+
+## Repo gotchas
+
+Read these before touching the dev tooling or merging across slices.
+
+- **`tsx watch` is intentionally off in `dev:server`.** On Windows under `concurrently`, `tsx watch` dies silently (the server prints its banner line and never reaches `serve()`, port 8787 stays empty, Vite proxies to nothing and the frontend errors with "Unexpected end of JSON input"). `package.json` therefore runs plain `tsx server/index.ts` for `npm run dev`, and exposes `npm run dev:server:watch` as a standalone script for the rare case where backend hot reload is wanted. **Do not "fix" `dev:server` by adding `watch` back** — it will look fine for a few minutes and then bite.
+- **Local commits may be ahead of `origin/main`.** Pushing to GitHub depends on the user's git credentials, which have been flaky. Before branching off in a new worktree, verify with `git log --oneline -5` and base from local `main`, not `origin/main`.
+- **`data/resume_es.json` is created by the backend on first read** (clone of EN until Slice 6 swaps it for DeepL translation). If you delete it locally to test bootstrap, the next `GET /resume` regenerates it. Don't commit it casually — Slice 6's test relies on the file being absent.
 
 ---
 
@@ -122,12 +145,14 @@ Slices 1 and 2 are done. Starting Slice 3: Field classification + dual-write act
 
 Read first:
 - docs/adr/0004-multi-locale-resume.md (especially the "Field classification is load-bearing" consequence)
-- docs/locale-implementation-plan.md (the "Slice 3" section)
+- docs/locale-implementation-plan.md — the "Slice 3" section, plus the "Repo gotchas" and "Parallelism" sections at the top
 - The "Translatable field" / "Shared field" entries in CONTEXT.md — this is the canonical list to encode
 - src/store.ts (post-Slice-2 shape)
 - src/components/Sidebar.tsx and src/components/forms/* (all call sites of setResume)
 
 This slice is the trickiest. Be surgical: every existing setResume call must be migrated to ActiveLocale or BothLocales based on what it touches. When in doubt, treat structural changes (add/remove/reorder/hide) and proper-noun fields (TimelineItem.title, CompactGridItem.title, header.*, techStack, tags) as BothLocales. Translatable text edits (subtitle, description, category, ShowcaseItem.title, ShowcaseLink.label, section.title, CompactGridItem.subtitle) as ActiveLocale.
+
+Parallel-work note: Slices 4 and 7 may be running in parallel sessions. Slice 4 is server-only (zero overlap). Slice 7 modifies src/App.tsx (Export button handler) — try not to touch App.tsx unless strictly necessary, and if you do, keep changes scoped so the merge stays clean.
 
 Run tests + manual smoke through every Sidebar action and every form field. Commit with `feat(locale): shared vs translatable field classification + dual-write` and push.
 ```
@@ -157,13 +182,15 @@ Starting Slice 4: Backend DeepL integration.
 
 Read first:
 - docs/adr/0004-multi-locale-resume.md
-- docs/locale-implementation-plan.md (the "Slice 4" section)
+- docs/locale-implementation-plan.md — the "Slice 4" section, plus the "Repo gotchas" and "Parallelism" sections at the top
 - server/app.ts (current shape)
 - DeepL Free API docs: https://developers.deepl.com/api-reference/translate
 
 This slice is server-only — no frontend changes. Make it safe-by-default: missing DEEPL_API_KEY returns 503, not a crash. Tests should mock the DeepL response (don't actually call the API in tests).
 
 Update render.yaml to declare DEEPL_API_KEY as a secret env var.
+
+Parallel-work note: Slices 3 and 7 may be running in parallel sessions. Both are frontend-only; you have zero file overlap with them. Don't touch package.json's `dev:server` script (see "Repo gotchas").
 
 Commit with `feat(locale): backend DeepL translate endpoint` and push.
 ```
@@ -195,7 +222,7 @@ Slices 1–4 are done. Starting Slice 5: Frontend blur-triggered translation + s
 Read first:
 - docs/adr/0004-multi-locale-resume.md (especially "Stale tracking is per-field, hash-based")
 - docs/design-system.md (§4 component patterns, §5 interactions)
-- docs/locale-implementation-plan.md (the "Slice 5" section)
+- docs/locale-implementation-plan.md — the "Slice 5" section, plus the "Repo gotchas" section at the top
 - src/store.ts and src/components/forms/shared.tsx (current shape post-Slice-3)
 - src/locale/classification.ts (created in Slice 3)
 
@@ -230,13 +257,15 @@ Slices 1–5 are done. Starting Slice 6: Auto-bootstrap Spanish locale.
 
 Read first:
 - docs/adr/0004-multi-locale-resume.md (the "Auto-bootstrap" consequence)
-- docs/locale-implementation-plan.md (the "Slice 6" section)
+- docs/locale-implementation-plan.md — the "Slice 6" section, plus the "Repo gotchas" section at the top
 - server/storage.ts (post-Slice-1 shape) and server/translate.ts (Slice 4)
 - src/locale/classification.ts (Slice 3) — reuse this to know which fields to translate
 
 Replace the EN→ES clone placeholder with actual translation. This runs once on first read when resume_es.json is missing. It's OK that it's slow (5–10s) — log progress to stdout.
 
 If DEEPL_API_KEY is missing, fall back to the clone behavior (so dev still works without a key) and log a clear warning.
+
+Test setup: the "Repo gotchas" section notes that `data/resume_es.json` is regenerated on first read whenever it's absent. Make sure your tests delete it before exercising the bootstrap path, and your manual smoke does the same.
 
 Commit with `feat(locale): auto-bootstrap Spanish locale on first load` and push.
 ```
@@ -265,15 +294,17 @@ Sub-tasks:
 ```
 We're implementing the multi-locale Resume feature per ADR-0004 and the slice plan in docs/locale-implementation-plan.md.
 
-Slices 1–6 are done. Starting Slice 7: ZIP export of both PDFs.
+Slices 1–6 are done (or Slices 1–2 if running in parallel with Slices 3 and 4 — this slice only needs the locale envelope shape from Slice 2). Starting Slice 7: ZIP export of both PDFs.
 
 Read first:
 - docs/adr/0004-multi-locale-resume.md
-- docs/locale-implementation-plan.md (the "Slice 7" section)
+- docs/locale-implementation-plan.md — the "Slice 7" section, plus the "Repo gotchas" and "Parallelism" sections at the top
 - src/App.tsx (current Export button)
 - src/pdf/Resume.tsx and src/pdf/format.ts
 
 Use jszip. The Spanish month names are a small static table — don't call DeepL for them (overkill and DeepL might give weird capitalization).
+
+Parallel-work note: Slice 3 may be running in a parallel session. Both slices may touch src/App.tsx — keep your changes scoped to the Export handler and the locale/PDF prop wiring; don't refactor unrelated parts of the toolbar.
 
 Commit with `feat(locale): ZIP export of both locale PDFs` and push.
 ```
@@ -299,7 +330,7 @@ We're closing out the multi-locale Resume feature per ADR-0004. Slices 1–7 are
 Starting Slice 8: Polish.
 
 Read first:
-- docs/locale-implementation-plan.md (the "Slice 8" section)
+- docs/locale-implementation-plan.md — the "Slice 8" section, plus the "Repo gotchas" section at the top
 - The actual app behavior across both locales
 
 This is the catch-all for "now that it works, what's clunky?". The two known items are: (a) no visible feedback while DeepL is responding, (b) DeepL failures only show as ⚠, no toast/error.
