@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -115,6 +115,116 @@ describe("app integration", () => {
 
   test("POST with invalid JSON returns 400", async () => {
     const res = await app.request("/resume", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "{not json",
+    });
+    expect(res.status).toBe(400);
+  });
+});
+
+describe("POST /translate", () => {
+  let dir: string;
+  let app: ReturnType<typeof createApp>;
+
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), "resume-builder-translate-"));
+    app = createApp(dir);
+  });
+
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  test("returns 200 with translated text on success", async () => {
+    vi.stubEnv("DEEPL_API_KEY", "test-key");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              translations: [{ text: "Hola, mundo" }],
+            }),
+            {
+              status: 200,
+              headers: { "content-type": "application/json" },
+            },
+          ),
+      ),
+    );
+
+    const res = await app.request("/translate", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ text: "Hello, world", targetLocale: "es" }),
+    });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ translated: "Hola, mundo" });
+  });
+
+  test("returns 503 when DEEPL_API_KEY is unset", async () => {
+    vi.stubEnv("DEEPL_API_KEY", "");
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const res = await app.request("/translate", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ text: "Hello", targetLocale: "es" }),
+    });
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ error: "translation_unavailable" });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  test("returns 503 when DeepL returns an error", async () => {
+    vi.stubEnv("DEEPL_API_KEY", "test-key");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response("quota exceeded", {
+            status: 456,
+            headers: { "content-type": "text/plain" },
+          }),
+      ),
+    );
+
+    const res = await app.request("/translate", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ text: "Hello", targetLocale: "es" }),
+    });
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ error: "translation_failed" });
+  });
+
+  test("returns 400 when text is missing", async () => {
+    vi.stubEnv("DEEPL_API_KEY", "test-key");
+    const res = await app.request("/translate", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ targetLocale: "es" }),
+    });
+    expect(res.status).toBe(400);
+  });
+
+  test("returns 400 when targetLocale is invalid", async () => {
+    vi.stubEnv("DEEPL_API_KEY", "test-key");
+    const res = await app.request("/translate", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ text: "Hello", targetLocale: "fr" }),
+    });
+    expect(res.status).toBe(400);
+  });
+
+  test("returns 400 on invalid JSON", async () => {
+    vi.stubEnv("DEEPL_API_KEY", "test-key");
+    const res = await app.request("/translate", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: "{not json",

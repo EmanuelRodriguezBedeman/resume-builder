@@ -6,6 +6,10 @@ import {
   type Locale,
   type Resume,
 } from "./storage.ts";
+import {
+  MissingDeepLKeyError,
+  translateText,
+} from "./translate.ts";
 
 const ENVELOPE_SCHEMA_VERSION = 1;
 
@@ -47,6 +51,34 @@ export function createApp(dataDir: string) {
     } catch (err) {
       console.error("[server] writeLocale failed:", err);
       return c.json({ error: "write_failed" }, 500);
+    }
+  });
+
+  app.post("/translate", async (c) => {
+    let body: { text?: unknown; targetLocale?: unknown };
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json({ error: "invalid_json" }, 400);
+    }
+    if (typeof body.text !== "string") {
+      return c.json({ error: "missing_text" }, 400);
+    }
+    if (!isLocale(body.targetLocale)) {
+      return c.json({ error: "invalid_target_locale" }, 400);
+    }
+    try {
+      const translated = await translateText(body.text, body.targetLocale);
+      return c.json({ translated });
+    } catch (err) {
+      if (err instanceof MissingDeepLKeyError) {
+        console.warn(
+          "[server] /translate called but DEEPL_API_KEY is not set",
+        );
+        return c.json({ error: "translation_unavailable" }, 503);
+      }
+      console.error("[server] DeepL translation failed:", err);
+      return c.json({ error: "translation_failed" }, 503);
     }
   });
 
