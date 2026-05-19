@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -19,10 +19,14 @@ describe("storage", () => {
 
   beforeEach(async () => {
     dir = await mkdtemp(join(tmpdir(), "resume-builder-storage-"));
+    // Force the bootstrap-Spanish path into clone fallback. Tests for the
+    // DeepL-translating path live in bootstrap.test.ts with mocked fetch.
+    vi.stubEnv("DEEPL_API_KEY", "");
   });
 
   afterEach(async () => {
     await rm(dir, { recursive: true, force: true });
+    vi.unstubAllEnvs();
   });
 
   test("readBothLocales returns both when both files exist", async () => {
@@ -44,7 +48,7 @@ describe("storage", () => {
     expect(got.es).toEqual(es);
   });
 
-  test("readBothLocales clones EN→ES when resume_es.json is missing and persists it", async () => {
+  test("readBothLocales bootstraps ES (clone fallback when no DEEPL_API_KEY) when resume_es.json is missing and persists it", async () => {
     const en: Resume = {
       schemaVersion: 1,
       header: { name: "Only EN", items: [] },

@@ -18,10 +18,14 @@ describe("app integration", () => {
   beforeEach(async () => {
     dir = await mkdtemp(join(tmpdir(), "resume-builder-app-"));
     app = createApp(dir);
+    // Force the ES-bootstrap path into clone fallback so the resume
+    // round-trip tests are deterministic without mocking DeepL.
+    vi.stubEnv("DEEPL_API_KEY", "");
   });
 
   afterEach(async () => {
     await rm(dir, { recursive: true, force: true });
+    vi.unstubAllEnvs();
   });
 
   test("GET /health returns ok", async () => {

@@ -237,7 +237,7 @@ Test the full loop manually. Commit with `feat(locale): blur-triggered translati
 
 ## Slice 6 — Auto-bootstrap of Spanish locale
 
-- [ ] **Slice complete**
+- [x] **Slice complete**
 
 Sub-tasks:
 - [ ] In `server/storage.ts`: on `readBothLocales`, if `resume_es.json` is missing, walk all Translatable fields of the EN locale, call DeepL for each, build the ES Resume, and write `resume_es.json` atomically before returning.

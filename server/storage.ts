@@ -1,5 +1,6 @@
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
+import { bootstrapSpanishFromEnglish } from "./bootstrap.ts";
 
 export type Locale = "en" | "es";
 
@@ -50,9 +51,7 @@ export async function readBothLocales(dir: string): Promise<LocalesBundle> {
     structuredClone(DEFAULT_RESUME);
   let es = await readJsonOrNull(localeFile(dir, "es"));
   if (es === null) {
-    // Slice 1 placeholder: clone EN → ES and persist. Slice 6 swaps this clone
-    // for a DeepL translation pass, preserving clone as the no-API-key fallback.
-    es = structuredClone(en);
+    es = await bootstrapSpanishFromEnglish(en);
     await writeJsonAtomic(localeFile(dir, "es"), es);
   }
   return { en, es };
