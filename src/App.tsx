@@ -1,5 +1,6 @@
-import { useEffect, useMemo, type CSSProperties } from "react";
-import { PDFDownloadLink } from "@react-pdf/renderer";
+import { useEffect, useState, type CSSProperties } from "react";
+import { pdf } from "@react-pdf/renderer";
+import JSZip from "jszip";
 import { Download, FileText } from "lucide-react";
 import { Resume } from "./pdf/Resume.tsx";
 import { HtmlPreview } from "./preview/HtmlPreview.tsx";
@@ -157,7 +158,68 @@ export function App() {
     return <main style={loadingScreenStyle}>Loading…</main>;
   }
 
-  return <LoadedApp resume={state.locales[activeLocale]} />;
+  return <LoadedApp resume={state.locales[activeLocale]} locales={state.locales} />;
+}
+
+async function buildZip(locales: LocalesBundle): Promise<Blob> {
+  const [enBlob, esBlob] = await Promise.all([
+    pdf(<Resume resume={locales.en} locale="en" />).toBlob(),
+    pdf(<Resume resume={locales.es} locale="es" />).toBlob(),
+  ]);
+  const slug = slugifyName(locales.en.header.name);
+  const zip = new JSZip();
+  zip.file(`${slug}.pdf`, enBlob);
+  zip.file(`${slug}_es.pdf`, esBlob);
+  return zip.generateAsync({ type: "blob" });
+}
+
+function ExportButton({ locales }: { locales: LocalesBundle }) {
+  const [status, setStatus] = useState<"idle" | "generating" | "error">("idle");
+
+  const onClick = async () => {
+    if (status === "generating") return;
+    setStatus("generating");
+    try {
+      const blob = await buildZip(locales);
+      const url = URL.createObjectURL(blob);
+      const slug = slugifyName(locales.en.header.name);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${slug}_resumes.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setStatus("idle");
+    } catch (err) {
+      console.error("Export failed:", err);
+      setStatus("error");
+    }
+  };
+
+  const label =
+    status === "generating"
+      ? "Generating…"
+      : status === "error"
+        ? "Export failed"
+        : "Export PDF";
+
+  return (
+    <button
+      type="button"
+      onClick={() => void onClick()}
+      disabled={status === "generating"}
+      title="Download both English and Spanish"
+      style={{
+        ...gradientButtonStyle,
+        opacity: status === "generating" ? 0.7 : 1,
+        cursor: status === "generating" ? "wait" : "pointer",
+      }}
+    >
+      <Download size={14} strokeWidth={2.5} />
+      {label}
+    </button>
+  );
 }
 
 function LocaleToggle() {
@@ -184,17 +246,16 @@ function LocaleToggle() {
   );
 }
 
-function LoadedApp({ resume }: { resume: ResumeType }) {
+function LoadedApp({
+  resume,
+  locales,
+}: {
+  resume: ResumeType;
+  locales: LocalesBundle;
+}) {
   // HtmlPreview self-subscribes to the store, so it doesn't receive
-  // `resume` here. The PDF document is only realized on Export click,
-  // so re-creating the JSX on every keystroke is cheap.
-  const fileName = `${slugifyName(resume.header.name)}.pdf`;
-
-  const exportDocument = useMemo(
-    () => <Resume resume={resume} />,
-    [resume],
-  );
-
+  // `resume` here. The PDF documents are only realized on Export click,
+  // so this component just hands `locales` to the Export button.
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
       <div style={toolbarStyle}>
@@ -211,28 +272,7 @@ function LoadedApp({ resume }: { resume: ResumeType }) {
         </span>
         <div style={toolbarRightStyle}>
           <LocaleToggle />
-          <PDFDownloadLink
-            document={exportDocument}
-            fileName={fileName}
-            style={gradientButtonStyle}
-          >
-            {({ loading, error: dlError }) => {
-              if (dlError) return "Export failed";
-              return (
-                <span
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "0.45rem",
-                    opacity: loading ? 0.7 : 1,
-                  }}
-                >
-                  <Download size={14} strokeWidth={2.5} />
-                  {loading ? "Generating…" : "Export PDF"}
-                </span>
-              );
-            }}
-          </PDFDownloadLink>
+          <ExportButton locales={locales} />
         </div>
       </div>
       <div

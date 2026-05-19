@@ -117,6 +117,7 @@ const CompactGridItem = memo(function CompactGridItem({
     if (!section || section.type !== "compactGrid") return null;
     return section.items.find((i) => i.id === itemId) ?? null;
   });
+  const locale = useStore((s) => s.activeLocale);
   const isHovered = useStore(
     (s) =>
       s.hovered.kind === "item" &&
@@ -145,7 +146,7 @@ const CompactGridItem = memo(function CompactGridItem({
       <div style={headRowStyle}>
         <span style={titleStyle}>{item.title}</span>
         {item.date ? (
-          <span style={dateStyle}>[{formatFlexibleDate(item.date)}]</span>
+          <span style={dateStyle}>[{formatFlexibleDate(item.date, locale)}]</span>
         ) : null}
       </div>
       {item.subtitle ? (

@@ -1,5 +1,6 @@
 import { Document, Page, StyleSheet } from "@react-pdf/renderer";
 import type { Resume as ResumeType } from "../types.ts";
+import type { Locale } from "../save.ts";
 import { Header } from "./Header.tsx";
 import { SectionRenderer } from "./sections/index.tsx";
 
@@ -14,13 +15,19 @@ const styles = StyleSheet.create({
   },
 });
 
-export function Resume({ resume }: { resume: ResumeType }) {
+export function Resume({
+  resume,
+  locale,
+}: {
+  resume: ResumeType;
+  locale: Locale;
+}) {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
         <Header header={resume.header} />
         {resume.sections.map((section) => (
-          <SectionRenderer key={section.id} section={section} />
+          <SectionRenderer key={section.id} section={section} locale={locale} />
         ))}
       </Page>
     </Document>

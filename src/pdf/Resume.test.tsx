@@ -3,9 +3,9 @@ import { pdf } from "@react-pdf/renderer";
 import { Resume } from "./Resume.tsx";
 import type { Resume as ResumeType } from "../types.ts";
 
-async function renderPdf(resume: ResumeType): Promise<Buffer> {
+async function renderPdf(resume: ResumeType, locale: "en" | "es" = "en"): Promise<Buffer> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const result = (await pdf(<Resume resume={resume} /> as any).toBuffer()) as unknown;
+  const result = (await pdf(<Resume resume={resume} locale={locale} /> as any).toBuffer()) as unknown;
   // @react-pdf/renderer.toBuffer() returns a Readable stream in Node;
   // drain it into one Buffer for assertions.
   if (Buffer.isBuffer(result)) return result;

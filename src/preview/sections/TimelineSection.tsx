@@ -106,6 +106,7 @@ const TimelineItem = memo(function TimelineItem({
     if (!section || section.type !== "timeline") return null;
     return section.items.find((i) => i.id === itemId) ?? null;
   });
+  const locale = useStore((s) => s.activeLocale);
   const isHovered = useStore(
     (s) =>
       s.hovered.kind === "item" &&
@@ -133,7 +134,7 @@ const TimelineItem = memo(function TimelineItem({
     >
       <div style={headRowStyle}>
         <span style={titleStyle}>{item.title}</span>
-        <span style={dateStyle}>{formatDateRange(item.dateRange)}</span>
+        <span style={dateStyle}>{formatDateRange(item.dateRange, locale)}</span>
       </div>
       <div style={subtitleStyle}>{item.subtitle}</div>
       <DescriptionBlocks blocks={item.description} />

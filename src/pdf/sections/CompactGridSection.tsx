@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from "@react-pdf/renderer";
 import type { CompactGridSection as CompactGridSectionType } from "../../types.ts";
+import type { Locale } from "../../save.ts";
 import { SectionHeading } from "../SectionHeading.tsx";
 import { formatFlexibleDate } from "../format.ts";
 
@@ -45,8 +46,10 @@ const styles = StyleSheet.create({
 
 export function CompactGridSection({
   section,
+  locale,
 }: {
   section: CompactGridSectionType;
+  locale: Locale;
 }) {
   return (
     <View style={styles.section} wrap={false}>
@@ -58,7 +61,7 @@ export function CompactGridSection({
               <Text style={styles.title}>{item.title}</Text>
               {item.date ? (
                 <Text style={styles.date}>
-                  [{formatFlexibleDate(item.date)}]
+                  [{formatFlexibleDate(item.date, locale)}]
                 </Text>
               ) : null}
             </View>

@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from "@react-pdf/renderer";
 import type { TimelineSection as TimelineSectionType } from "../../types.ts";
+import type { Locale } from "../../save.ts";
 import { DescriptionBlocks } from "../DescriptionBlocks.tsx";
 import { SectionHeading } from "../SectionHeading.tsx";
 import { formatDateRange } from "../format.ts";
@@ -39,8 +40,10 @@ const styles = StyleSheet.create({
 
 export function TimelineSection({
   section,
+  locale,
 }: {
   section: TimelineSectionType;
+  locale: Locale;
 }) {
   return (
     <View style={styles.section}>
@@ -49,7 +52,7 @@ export function TimelineSection({
         <View key={item.id} style={styles.item} wrap={false}>
           <View style={styles.headRow}>
             <Text style={styles.title}>{item.title}</Text>
-            <Text style={styles.date}>{formatDateRange(item.dateRange)}</Text>
+            <Text style={styles.date}>{formatDateRange(item.dateRange, locale)}</Text>
           </View>
           <Text style={styles.subtitle}>{item.subtitle}</Text>
           <DescriptionBlocks blocks={item.description} />
