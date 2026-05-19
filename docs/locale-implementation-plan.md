@@ -49,7 +49,7 @@ Before starting any slice, make sure the agent reads:
 Read these before touching the dev tooling or merging across slices.
 
 - **`tsx watch` is intentionally off in `dev:server`.** On Windows under `concurrently`, `tsx watch` dies silently (the server prints its banner line and never reaches `serve()`, port 8787 stays empty, Vite proxies to nothing and the frontend errors with "Unexpected end of JSON input"). `package.json` therefore runs plain `tsx server/index.ts` for `npm run dev`, and exposes `npm run dev:server:watch` as a standalone script for the rare case where backend hot reload is wanted. **Do not "fix" `dev:server` by adding `watch` back** — it will look fine for a few minutes and then bite.
-- **Local commits may be ahead of `origin/main`.** Pushing to GitHub depends on the user's git credentials, which have been flaky. Before branching off in a new worktree, verify with `git log --oneline -5` and base from local `main`, not `origin/main`.
+- **Local commits may be ahead of `origin/main`** between slice handoffs. If you're branching off in a new worktree before the previous slice has pushed, base from local `main` (verify with `git log --oneline -5`), not from `origin/main`. The push pipeline itself is healthy — `gh auth setup-git` was applied once on 2026-05-19 to route github.com creds through `gh` (this Windows machine has two gh accounts and GCM was caching the wrong one); future pushes work without intervention.
 - **`data/resume_es.json` is created by the backend on first read** (clone of EN until Slice 6 swaps it for DeepL translation). If you delete it locally to test bootstrap, the next `GET /resume` regenerates it. Don't commit it casually — Slice 6's test relies on the file being absent.
 
 ---
