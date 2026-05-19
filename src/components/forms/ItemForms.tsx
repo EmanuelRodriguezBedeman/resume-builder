@@ -15,6 +15,7 @@ import {
   withDescriptionBlock,
   withDescriptionBlockAdded,
   withDescriptionBlockRemoved,
+  withSectionTitle,
   withShowcaseItem,
   withShowcaseLink,
   withShowcaseLinkAdded,
@@ -31,6 +32,16 @@ import {
   TagListEditor,
   TextField,
 } from "./shared.tsx";
+
+// Field-level routing per ADR-0004 / src/locale/classification.ts.
+// Per call site:
+//   - Translatable fields (subtitle, category, ShowcaseItem.title,
+//     ShowcaseLink.label, section.title, description text/leadIn) use
+//     setResumeActiveLocale.
+//   - Shared fields (TimelineItem.title, CompactGridItem.title,
+//     techStack, dates, link icon/href) use setResumeBothLocales.
+//   - Structural ops (adding/removing description blocks or showcase
+//     links) use setResumeBothLocales to keep IDs aligned.
 
 // -- Dispatch -----------------------------------------------------------
 
@@ -108,42 +119,60 @@ function TimelineItemForm({
   section: TimelineSection;
   itemId: string;
 }) {
-  const setResume = useStore((s) => s.setResume);
+  const setResumeActiveLocale = useStore((s) => s.setResumeActiveLocale);
+  const setResumeBothLocales = useStore((s) => s.setResumeBothLocales);
   const item = section.items.find((i) => i.id === itemId);
   if (!item) return null;
-  const update = (patch: Parameters<typeof withTimelineItem>[3]) =>
-    setResume((r) => withTimelineItem(r, section.id, itemId, patch));
 
   return (
     <div>
       <FormHeading title="Experience entry" subtitle={section.title} />
+      {/* Title = organization name → Shared (proper noun). */}
       <TextField
         label="Title (organization)"
         value={item.title}
-        onChange={(title) => update({ title })}
+        onChange={(title) =>
+          setResumeBothLocales((r) =>
+            withTimelineItem(r, section.id, itemId, { title }),
+          )
+        }
       />
+      {/* Subtitle = role/position → Translatable. */}
       <TextField
         label="Subtitle (role / position)"
         value={item.subtitle}
-        onChange={(subtitle) => update({ subtitle })}
+        onChange={(subtitle) =>
+          setResumeActiveLocale((r) =>
+            withTimelineItem(r, section.id, itemId, { subtitle }),
+          )
+        }
       />
+      {/* Date range = ISO strings → Shared. */}
       <DateRangeEditor
         label="Date range"
         value={item.dateRange}
-        onChange={(dateRange) => update({ dateRange })}
+        onChange={(dateRange) =>
+          setResumeBothLocales((r) =>
+            withTimelineItem(r, section.id, itemId, { dateRange }),
+          )
+        }
       />
       <DescriptionBlockEditor
         blocks={item.description}
+        // Block text + leadIn are both Translatable.
         onChange={(idx, patch) =>
-          setResume((r) => withDescriptionBlock(r, section.id, itemId, idx, patch))
+          setResumeActiveLocale((r) =>
+            withDescriptionBlock(r, section.id, itemId, idx, patch),
+          )
         }
+        // Adding/removing blocks is structural → Shared.
         onAdd={(type) =>
-          setResume((r) =>
+          setResumeBothLocales((r) =>
             withDescriptionBlockAdded(r, section.id, itemId, makeBlock(type)),
           )
         }
         onRemove={(idx) =>
-          setResume((r) =>
+          setResumeBothLocales((r) =>
             withDescriptionBlockRemoved(r, section.id, itemId, idx),
           )
         }
@@ -161,11 +190,10 @@ function CompactGridItemForm({
   section: CompactGridSection;
   itemId: string;
 }) {
-  const setResume = useStore((s) => s.setResume);
+  const setResumeActiveLocale = useStore((s) => s.setResumeActiveLocale);
+  const setResumeBothLocales = useStore((s) => s.setResumeBothLocales);
   const item = section.items.find((i) => i.id === itemId);
   if (!item) return null;
-  const update = (patch: Parameters<typeof withCompactGridItem>[3]) =>
-    setResume((r) => withCompactGridItem(r, section.id, itemId, patch));
 
   return (
     <div>
@@ -173,22 +201,40 @@ function CompactGridItemForm({
         title="Compact grid entry"
         subtitle={section.title}
       />
+      {/* Title = institution name → Shared (proper noun). */}
       <TextField
         label="Title"
         value={item.title}
-        onChange={(title) => update({ title })}
+        onChange={(title) =>
+          setResumeBothLocales((r) =>
+            withCompactGridItem(r, section.id, itemId, { title }),
+          )
+        }
       />
+      {/* Subtitle (e.g. degree) → Translatable. */}
       <TextField
         label="Subtitle (optional)"
         value={item.subtitle ?? ""}
         onChange={(subtitle) =>
-          update(subtitle ? { subtitle } : { subtitle: undefined })
+          setResumeActiveLocale((r) =>
+            withCompactGridItem(
+              r,
+              section.id,
+              itemId,
+              subtitle ? { subtitle } : { subtitle: undefined },
+            ),
+          )
         }
       />
+      {/* Date strings → Shared. */}
       <FlexibleDateEditor
         label="Date (optional)"
         value={item.date}
-        onChange={(date) => update({ date })}
+        onChange={(date) =>
+          setResumeBothLocales((r) =>
+            withCompactGridItem(r, section.id, itemId, { date }),
+          )
+        }
       />
     </div>
   );
@@ -203,57 +249,74 @@ function ShowcaseItemForm({
   section: ShowcaseSection;
   itemId: string;
 }) {
-  const setResume = useStore((s) => s.setResume);
+  const setResumeActiveLocale = useStore((s) => s.setResumeActiveLocale);
+  const setResumeBothLocales = useStore((s) => s.setResumeBothLocales);
   const item = section.items.find((i) => i.id === itemId);
   if (!item) return null;
-  const update = (patch: Parameters<typeof withShowcaseItem>[3]) =>
-    setResume((r) => withShowcaseItem(r, section.id, itemId, patch));
 
   return (
     <div>
       <FormHeading title="Project entry" subtitle={section.title} />
+      {/* ShowcaseItem.title is Translatable (project names get localized). */}
       <TextField
         label="Title"
         value={item.title}
-        onChange={(title) => update({ title })}
+        onChange={(title) =>
+          setResumeActiveLocale((r) =>
+            withShowcaseItem(r, section.id, itemId, { title }),
+          )
+        }
       />
+      {/* techStack = list of tags → Shared. */}
       <TextField
         label="Tech stack (comma-separated)"
         value={item.techStack.join(", ")}
         onChange={(raw) =>
-          update({
-            techStack: raw
-              .split(",")
-              .map((t) => t.trim())
-              .filter((t) => t.length > 0),
-          })
+          setResumeBothLocales((r) =>
+            withShowcaseItem(r, section.id, itemId, {
+              techStack: raw
+                .split(",")
+                .map((t) => t.trim())
+                .filter((t) => t.length > 0),
+            }),
+          )
         }
       />
       <DescriptionBlockEditor
         blocks={item.description}
         onChange={(idx, patch) =>
-          setResume((r) => withDescriptionBlock(r, section.id, itemId, idx, patch))
+          setResumeActiveLocale((r) =>
+            withDescriptionBlock(r, section.id, itemId, idx, patch),
+          )
         }
         onAdd={(type) =>
-          setResume((r) =>
+          setResumeBothLocales((r) =>
             withDescriptionBlockAdded(r, section.id, itemId, makeBlock(type)),
           )
         }
         onRemove={(idx) =>
-          setResume((r) =>
+          setResumeBothLocales((r) =>
             withDescriptionBlockRemoved(r, section.id, itemId, idx),
           )
         }
       />
       <LinkListEditor
         links={item.links}
-        onUpdate={(linkId, patch) =>
-          setResume((r) =>
-            withShowcaseLink(r, section.id, itemId, linkId, patch),
-          )
-        }
+        // Patch may carry icon, href (Shared) or label (Translatable).
+        // Route by key so only label takes the active-locale path.
+        onUpdate={(linkId, patch) => {
+          if ("label" in patch) {
+            setResumeActiveLocale((r) =>
+              withShowcaseLink(r, section.id, itemId, linkId, patch),
+            );
+          } else {
+            setResumeBothLocales((r) =>
+              withShowcaseLink(r, section.id, itemId, linkId, patch),
+            );
+          }
+        }}
         onAdd={() =>
-          setResume((r) =>
+          setResumeBothLocales((r) =>
             withShowcaseLinkAdded(r, section.id, itemId, {
               id: `link-${Date.now()}`,
               icon: "link",
@@ -263,7 +326,9 @@ function ShowcaseItemForm({
           )
         }
         onRemove={(linkId) =>
-          setResume((r) => withShowcaseLinkRemoved(r, section.id, itemId, linkId))
+          setResumeBothLocales((r) =>
+            withShowcaseLinkRemoved(r, section.id, itemId, linkId),
+          )
         }
       />
     </div>
@@ -279,28 +344,33 @@ function CategorizedTagsItemForm({
   section: CategorizedTagsSection;
   itemId: string;
 }) {
-  const setResume = useStore((s) => s.setResume);
+  const setResumeActiveLocale = useStore((s) => s.setResumeActiveLocale);
+  const setResumeBothLocales = useStore((s) => s.setResumeBothLocales);
   const item = section.items.find((i) => i.id === itemId);
   if (!item) return null;
-  const update = (patch: Parameters<typeof withCategorizedTagsItem>[3]) =>
-    setResume((r) => withCategorizedTagsItem(r, section.id, itemId, patch));
 
   return (
     <div>
       <FormHeading title="Tag category" subtitle={section.title} />
+      {/* Category name → Translatable (e.g. "Primary" / "Primarias"). */}
       <TextField
         label="Category"
         value={item.category}
-        onChange={(category) => update({ category })}
+        onChange={(category) =>
+          setResumeActiveLocale((r) =>
+            withCategorizedTagsItem(r, section.id, itemId, { category }),
+          )
+        }
       />
+      {/* Tags = proper-noun-ish skill names → Shared. */}
       <TagListEditor
         label="Tags"
         tags={item.tags}
         onAdd={(tag) =>
-          setResume((r) => withTagAdded(r, section.id, itemId, tag))
+          setResumeBothLocales((r) => withTagAdded(r, section.id, itemId, tag))
         }
         onRemove={(idx) =>
-          setResume((r) => withTagRemoved(r, section.id, itemId, idx))
+          setResumeBothLocales((r) => withTagRemoved(r, section.id, itemId, idx))
         }
       />
     </div>
@@ -314,7 +384,8 @@ export function SectionForm({
 }: {
   section: Section;
 }) {
-  const setResume = useStore((s) => s.setResume);
+  // section.title is Translatable.
+  const setResumeActiveLocale = useStore((s) => s.setResumeActiveLocale);
   return (
     <div>
       <FormHeading title={`Section · ${section.type}`} />
@@ -322,12 +393,7 @@ export function SectionForm({
         label="Title"
         value={section.title}
         onChange={(title) =>
-          setResume((r) => ({
-            ...r,
-            sections: r.sections.map((s) =>
-              s.id === section.id ? { ...s, title } : s,
-            ),
-          }))
+          setResumeActiveLocale((r) => withSectionTitle(r, section.id, title))
         }
       />
     </div>

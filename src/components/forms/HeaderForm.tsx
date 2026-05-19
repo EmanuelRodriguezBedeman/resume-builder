@@ -6,6 +6,7 @@ import {
   withHeaderItem,
   withHeaderItemAdded,
   withHeaderItemRemoved,
+  withHeaderName,
 } from "../../updaters.ts";
 import { InlineConfirm } from "../InlineConfirm.tsx";
 import {
@@ -18,13 +19,15 @@ import {
   subtleButtonStyle,
 } from "./shared.tsx";
 
+// Per CONTEXT.md the entire Header is a Shared field — proper nouns and
+// contact data don't translate. So every mutation here writes to both
+// locales.
 export function HeaderForm({ resume }: { resume: Resume }) {
-  const updateHeaderName = useStore((s) => s.updateHeaderName);
-  const setResume = useStore((s) => s.setResume);
+  const setResumeBothLocales = useStore((s) => s.setResumeBothLocales);
 
   function handleAddItem() {
     const id = `header-item-${Date.now()}`;
-    setResume((r) =>
+    setResumeBothLocales((r) =>
       withHeaderItemAdded(r, { id, icon: "link", text: "", href: "" }),
     );
   }
@@ -37,7 +40,7 @@ export function HeaderForm({ resume }: { resume: Resume }) {
       <TextField
         label="Name"
         value={resume.header.name}
-        onChange={updateHeaderName}
+        onChange={(name) => setResumeBothLocales((r) => withHeaderName(r, name))}
       />
 
       <div style={fieldGroupStyle}>
@@ -57,7 +60,9 @@ export function HeaderForm({ resume }: { resume: Resume }) {
               </span>
               <InlineConfirm
                 ariaLabel={`remove header item ${item.text}`}
-                onConfirm={() => setResume((r) => withHeaderItemRemoved(r, item.id))}
+                onConfirm={() =>
+                  setResumeBothLocales((r) => withHeaderItemRemoved(r, item.id))
+                }
                 trigger={({ onClick }) => (
                   <button type="button" onClick={onClick} style={dangerLinkStyle}>
                     Remove
@@ -69,14 +74,14 @@ export function HeaderForm({ resume }: { resume: Resume }) {
               label="Icon"
               value={item.icon}
               onChange={(icon) =>
-                setResume((r) => withHeaderItem(r, item.id, { icon }))
+                setResumeBothLocales((r) => withHeaderItem(r, item.id, { icon }))
               }
             />
             <TextField
               label="Text"
               value={item.text}
               onChange={(text) =>
-                setResume((r) => withHeaderItem(r, item.id, { text }))
+                setResumeBothLocales((r) => withHeaderItem(r, item.id, { text }))
               }
             />
             <TextField
@@ -84,7 +89,7 @@ export function HeaderForm({ resume }: { resume: Resume }) {
               value={item.href ?? ""}
               placeholder="https://… or mailto:…"
               onChange={(href) =>
-                setResume((r) =>
+                setResumeBothLocales((r) =>
                   withHeaderItem(
                     r,
                     item.id,

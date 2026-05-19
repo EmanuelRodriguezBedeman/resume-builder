@@ -49,12 +49,18 @@ type Store = {
   setActiveLocale: (locale: Locale) => void;
 
   // Mutations (each one auto-saves to the backend, debounced).
-  // In Slice 2 every mutation only touches the active locale. Slice 3
-  // splits this into setResumeActiveLocale vs setResumeBothLocales.
-  updateHeaderName: (name: string) => void;
-  // Generic producer-based mutation. Form widgets pass a pure updater from
-  // src/updaters.ts and the store handles the save side effect.
-  setResume: (producer: (current: Resume) => Resume) => void;
+  //
+  // Two write paths per ADR-0004:
+  //  - Translatable edits (subtitle, description, section.title, …) call
+  //    setResumeActiveLocale: applies the producer to the active locale
+  //    only and POSTs that locale's file.
+  //  - Shared edits + structural ops (DnD, hide, add/remove, header fields,
+  //    proper-noun titles, dates, tags) call setResumeBothLocales: applies
+  //    the same producer to both locales and POSTs both files.
+  //
+  // The Shared vs Translatable taxonomy lives in src/locale/classification.ts.
+  setResumeActiveLocale: (producer: (current: Resume) => Resume) => void;
+  setResumeBothLocales: (producer: (current: Resume) => Resume) => void;
 
   // Selection actions
   selectNone: () => void;
@@ -126,25 +132,7 @@ export const useStore = create<Store>((set) => ({
 
   setActiveLocale: (locale) => set({ activeLocale: locale }),
 
-  updateHeaderName: (name) =>
-    set((prev) => {
-      if (prev.state.status !== "loaded") return prev;
-      const locale = prev.activeLocale;
-      const currentResume = prev.state.locales[locale];
-      const nextResume: Resume = {
-        ...currentResume,
-        header: { ...currentResume.header, name },
-      };
-      void debouncedSaveByLocale[locale](nextResume);
-      return {
-        state: {
-          status: "loaded",
-          locales: { ...prev.state.locales, [locale]: nextResume },
-        },
-      };
-    }),
-
-  setResume: (producer) =>
+  setResumeActiveLocale: (producer) =>
     set((prev) => {
       if (prev.state.status !== "loaded") return prev;
       const locale = prev.activeLocale;
@@ -154,6 +142,24 @@ export const useStore = create<Store>((set) => ({
         state: {
           status: "loaded",
           locales: { ...prev.state.locales, [locale]: nextResume },
+        },
+      };
+    }),
+
+  setResumeBothLocales: (producer) =>
+    set((prev) => {
+      if (prev.state.status !== "loaded") return prev;
+      // Same producer reference applied independently to each locale —
+      // structural changes (IDs, ordering) come out identical because the
+      // pre-state already shares them; shared-field edits land in both.
+      const nextEn = producer(prev.state.locales.en);
+      const nextEs = producer(prev.state.locales.es);
+      void debouncedSaveByLocale.en(nextEn);
+      void debouncedSaveByLocale.es(nextEs);
+      return {
+        state: {
+          status: "loaded",
+          locales: { en: nextEn, es: nextEs },
         },
       };
     }),

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { useStore } from "./store.ts";
 import type { Resume } from "./types.ts";
+import { withHeaderName, withSectionTitle } from "./updaters.ts";
 
 const sample: Resume = {
   schemaVersion: 1,
@@ -57,33 +58,65 @@ describe("setActiveLocale", () => {
   });
 });
 
-describe("updateHeaderName", () => {
-  test("mutates only the active locale's header name", () => {
-    useStore.getState().updateHeaderName("New Name");
+describe("setResumeActiveLocale", () => {
+  test("writes to the active locale only — sibling locale untouched", () => {
+    useStore
+      .getState()
+      .setResumeActiveLocale((r) => withSectionTitle(r, "exp", "Experiencia"));
 
     const state = useStore.getState().state;
     expect(state.status).toBe("loaded");
     if (state.status !== "loaded") return;
-    expect(state.locales.en.header.name).toBe("New Name");
-    // Sibling locale untouched in Slice 2 (no propagation yet).
-    expect(state.locales.es.header.name).toBe("Original Name");
-    expect(state.locales.en.header.items).toEqual(sample.header.items);
-    expect(state.locales.en.sections).toEqual(sample.sections);
+    expect(state.locales.en.sections[0]!.title).toBe("Experiencia");
+    expect(state.locales.es.sections[0]!.title).toBe("Experience");
   });
 
   test("writes to ES when ES is the active locale", () => {
     useStore.getState().setActiveLocale("es");
-    useStore.getState().updateHeaderName("Nombre Nuevo");
+    useStore
+      .getState()
+      .setResumeActiveLocale((r) => withSectionTitle(r, "exp", "Experiencia"));
 
     const state = useStore.getState().state;
     if (state.status !== "loaded") return;
-    expect(state.locales.es.header.name).toBe("Nombre Nuevo");
-    expect(state.locales.en.header.name).toBe("Original Name");
+    expect(state.locales.es.sections[0]!.title).toBe("Experiencia");
+    expect(state.locales.en.sections[0]!.title).toBe("Experience");
   });
 
   test("is a no-op when the resume is not loaded", () => {
     useStore.setState({ state: { status: "loading" } });
-    useStore.getState().updateHeaderName("Anything");
+    useStore.getState().setResumeActiveLocale((r) => r);
+    expect(useStore.getState().state).toEqual({ status: "loading" });
+  });
+});
+
+describe("setResumeBothLocales", () => {
+  test("applies the producer to both locales", () => {
+    useStore
+      .getState()
+      .setResumeBothLocales((r) => withHeaderName(r, "New Name"));
+
+    const state = useStore.getState().state;
+    if (state.status !== "loaded") return;
+    expect(state.locales.en.header.name).toBe("New Name");
+    expect(state.locales.es.header.name).toBe("New Name");
+  });
+
+  test("propagation is independent of the active locale", () => {
+    useStore.getState().setActiveLocale("es");
+    useStore
+      .getState()
+      .setResumeBothLocales((r) => withHeaderName(r, "Nombre Compartido"));
+
+    const state = useStore.getState().state;
+    if (state.status !== "loaded") return;
+    expect(state.locales.en.header.name).toBe("Nombre Compartido");
+    expect(state.locales.es.header.name).toBe("Nombre Compartido");
+  });
+
+  test("is a no-op when the resume is not loaded", () => {
+    useStore.setState({ state: { status: "loading" } });
+    useStore.getState().setResumeBothLocales((r) => r);
     expect(useStore.getState().state).toEqual({ status: "loading" });
   });
 });

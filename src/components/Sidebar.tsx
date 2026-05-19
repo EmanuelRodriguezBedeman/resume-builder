@@ -266,7 +266,9 @@ function SortableItemRow({
 }) {
   const selection = useStore((s) => s.selection);
   const selectItem = useStore((s) => s.selectItem);
-  const setResume = useStore((s) => s.setResume);
+  // Sidebar only does structural ops (remove, reorder, add, hide), so every
+  // mutation here is BothLocales — keeps IDs and ordering in sync.
+  const setResumeBothLocales = useStore((s) => s.setResumeBothLocales);
 
   const {
     attributes,
@@ -334,7 +336,7 @@ function SortableItemRow({
       <InlineConfirm
         ariaLabel={`remove ${label || "item"}`}
         onConfirm={() => {
-          setResume((r) => withItemRemoved(r, section.id, item.id));
+          setResumeBothLocales((r) => withItemRemoved(r, section.id, item.id));
           if (
             selection.kind === "item" &&
             selection.sectionId === section.id &&
@@ -372,7 +374,8 @@ function SortableSectionBlock({ section }: { section: Section }) {
   const selectSection = useStore((s) => s.selectSection);
   const selectItem = useStore((s) => s.selectItem);
   const toggleExpanded = useStore((s) => s.toggleSectionExpanded);
-  const setResume = useStore((s) => s.setResume);
+  // All structural — hide toggle, section remove, item add — go to both.
+  const setResumeBothLocales = useStore((s) => s.setResumeBothLocales);
 
   const {
     attributes,
@@ -470,7 +473,7 @@ function SortableSectionBlock({ section }: { section: Section }) {
           type="button"
           onClick={(e) => {
             e.stopPropagation();
-            setResume((r) => withSectionHiddenToggled(r, section.id));
+            setResumeBothLocales((r) => withSectionHiddenToggled(r, section.id));
           }}
           style={{
             ...iconBtnBase,
@@ -494,7 +497,7 @@ function SortableSectionBlock({ section }: { section: Section }) {
         <InlineConfirm
           ariaLabel={`remove section ${section.title}`}
           onConfirm={() => {
-            setResume((r) => withSectionRemoved(r, section.id));
+            setResumeBothLocales((r) => withSectionRemoved(r, section.id));
             if (
               selection.kind === "section" &&
               selection.sectionId === section.id
@@ -541,7 +544,7 @@ function SortableSectionBlock({ section }: { section: Section }) {
             type="button"
             onClick={() => {
               const itemId = `item-${Date.now()}`;
-              setResume((r) => withItemAdded(r, section.id, itemId));
+              setResumeBothLocales((r) => withItemAdded(r, section.id, itemId));
               selectItem(section.id, itemId);
             }}
             style={addItemButtonStyle}
@@ -568,7 +571,8 @@ export function Sidebar({ resume }: { resume: Resume }) {
   const selection = useStore((s) => s.selection);
   const selectHeader = useStore((s) => s.selectHeader);
   const selectSection = useStore((s) => s.selectSection);
-  const setResume = useStore((s) => s.setResume);
+  // DnD reorders + add-section are structural → both locales.
+  const setResumeBothLocales = useStore((s) => s.setResumeBothLocales);
 
   const [pickerOpen, setPickerOpen] = useState(false);
 
@@ -590,7 +594,7 @@ export function Sidebar({ resume }: { resume: Resume }) {
       const fromIdx = resume.sections.findIndex((s) => s.id === fromId);
       const toIdx = resume.sections.findIndex((s) => s.id === toId);
       if (fromIdx < 0 || toIdx < 0) return;
-      setResume((r) => withSectionsReordered(r, fromIdx, toIdx));
+      setResumeBothLocales((r) => withSectionsReordered(r, fromIdx, toIdx));
       return;
     }
 
@@ -604,13 +608,13 @@ export function Sidebar({ resume }: { resume: Resume }) {
       const fromIdx = section.items.findIndex((i) => i.id === fromItemId);
       const toIdx = section.items.findIndex((i) => i.id === toItemId);
       if (fromIdx < 0 || toIdx < 0) return;
-      setResume((r) => withItemsReordered(r, section.id, fromIdx, toIdx));
+      setResumeBothLocales((r) => withItemsReordered(r, section.id, fromIdx, toIdx));
     }
   }
 
   function handleAddSection(type: AddableSectionType) {
     const id = `section-${Date.now()}`;
-    setResume((r) => withSectionAdded(r, type, id));
+    setResumeBothLocales((r) => withSectionAdded(r, type, id));
     setPickerOpen(false);
     selectSection(id);
   }
