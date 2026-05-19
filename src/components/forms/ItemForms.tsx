@@ -9,6 +9,8 @@ import type {
 } from "../../types.ts";
 import { useStore } from "../../store.ts";
 import { theme } from "../../theme.ts";
+import type { Locale } from "../../save.ts";
+import { tpath } from "../../locale/translation.ts";
 import {
   withCategorizedTagsItem,
   withCompactGridItem,
@@ -31,7 +33,28 @@ import {
   LinkListEditor,
   TagListEditor,
   TextField,
+  type TranslationProps,
 } from "./shared.tsx";
+
+// -- Peer-locale lookup helpers ----------------------------------------
+//
+// Translatable fields commit on blur by sending the new active value to
+// /translate and writing the result into the *peer* locale. To do that
+// each call site needs (a) the peer's current value at the same field
+// (used as the failure-baseline hash) and (b) a way to write to the peer
+// locale specifically. We subscribe to peer state via useStore.
+
+function usePeerResume(): Resume | null {
+  return useStore((s) =>
+    s.state.status === "loaded"
+      ? s.state.locales[s.activeLocale === "en" ? "es" : "en"]
+      : null,
+  );
+}
+
+function usePeerLocale(): Locale {
+  return useStore((s) => (s.activeLocale === "en" ? "es" : "en"));
+}
 
 // Field-level routing per ADR-0004 / src/locale/classification.ts.
 // Per call site:
@@ -121,8 +144,53 @@ function TimelineItemForm({
 }) {
   const setResumeActiveLocale = useStore((s) => s.setResumeActiveLocale);
   const setResumeBothLocales = useStore((s) => s.setResumeBothLocales);
+  const setResumeForLocale = useStore((s) => s.setResumeForLocale);
+  const peerResume = usePeerResume();
+  const peerLocale = usePeerLocale();
   const item = section.items.find((i) => i.id === itemId);
   if (!item) return null;
+
+  const peerSection = peerResume?.sections.find((s) => s.id === section.id);
+  const peerItem =
+    peerSection?.type === "timeline"
+      ? peerSection.items.find((i) => i.id === itemId)
+      : undefined;
+
+  const subtitleTranslation: TranslationProps = {
+    path: tpath.timelineItemSubtitle(section.id, itemId),
+    peerValue: peerItem?.subtitle ?? "",
+    applyTranslation: (translated) =>
+      setResumeForLocale(peerLocale, (r) =>
+        withTimelineItem(r, section.id, itemId, { subtitle: translated }),
+      ),
+  };
+
+  const blockTranslationFor = (
+    idx: number,
+    field: "text" | "leadIn",
+  ): TranslationProps | undefined => {
+    const peerBlock = peerItem?.description[idx];
+    const peerValue =
+      field === "text"
+        ? peerBlock?.text ?? ""
+        : peerBlock?.type === "bullet"
+          ? peerBlock.leadIn ?? ""
+          : "";
+    const path =
+      field === "text"
+        ? tpath.descriptionBlockText(section.id, itemId, idx)
+        : tpath.descriptionBlockLeadIn(section.id, itemId, idx);
+    return {
+      path,
+      peerValue,
+      applyTranslation: (translated) =>
+        setResumeForLocale(peerLocale, (r) =>
+          withDescriptionBlock(r, section.id, itemId, idx, {
+            [field]: translated,
+          } as Partial<DescriptionBlock>),
+        ),
+    };
+  };
 
   return (
     <div>
@@ -146,6 +214,7 @@ function TimelineItemForm({
             withTimelineItem(r, section.id, itemId, { subtitle }),
           )
         }
+        translation={subtitleTranslation}
       />
       {/* Date range = ISO strings → Shared. */}
       <DateRangeEditor
@@ -176,6 +245,7 @@ function TimelineItemForm({
             withDescriptionBlockRemoved(r, section.id, itemId, idx),
           )
         }
+        blockTranslationFor={blockTranslationFor}
       />
     </div>
   );
@@ -192,8 +262,31 @@ function CompactGridItemForm({
 }) {
   const setResumeActiveLocale = useStore((s) => s.setResumeActiveLocale);
   const setResumeBothLocales = useStore((s) => s.setResumeBothLocales);
+  const setResumeForLocale = useStore((s) => s.setResumeForLocale);
+  const peerResume = usePeerResume();
+  const peerLocale = usePeerLocale();
   const item = section.items.find((i) => i.id === itemId);
   if (!item) return null;
+
+  const peerSection = peerResume?.sections.find((s) => s.id === section.id);
+  const peerItem =
+    peerSection?.type === "compactGrid"
+      ? peerSection.items.find((i) => i.id === itemId)
+      : undefined;
+
+  const subtitleTranslation: TranslationProps = {
+    path: tpath.compactGridItemSubtitle(section.id, itemId),
+    peerValue: peerItem?.subtitle ?? "",
+    applyTranslation: (translated) =>
+      setResumeForLocale(peerLocale, (r) =>
+        withCompactGridItem(
+          r,
+          section.id,
+          itemId,
+          translated ? { subtitle: translated } : { subtitle: undefined },
+        ),
+      ),
+  };
 
   return (
     <div>
@@ -225,6 +318,7 @@ function CompactGridItemForm({
             ),
           )
         }
+        translation={subtitleTranslation}
       />
       {/* Date strings → Shared. */}
       <FlexibleDateEditor
@@ -251,8 +345,69 @@ function ShowcaseItemForm({
 }) {
   const setResumeActiveLocale = useStore((s) => s.setResumeActiveLocale);
   const setResumeBothLocales = useStore((s) => s.setResumeBothLocales);
+  const setResumeForLocale = useStore((s) => s.setResumeForLocale);
+  const peerResume = usePeerResume();
+  const peerLocale = usePeerLocale();
   const item = section.items.find((i) => i.id === itemId);
   if (!item) return null;
+
+  const peerSection = peerResume?.sections.find((s) => s.id === section.id);
+  const peerItem =
+    peerSection?.type === "showcase"
+      ? peerSection.items.find((i) => i.id === itemId)
+      : undefined;
+
+  const titleTranslation: TranslationProps = {
+    path: tpath.showcaseItemTitle(section.id, itemId),
+    peerValue: peerItem?.title ?? "",
+    applyTranslation: (translated) =>
+      setResumeForLocale(peerLocale, (r) =>
+        withShowcaseItem(r, section.id, itemId, { title: translated }),
+      ),
+  };
+
+  const blockTranslationFor = (
+    idx: number,
+    field: "text" | "leadIn",
+  ): TranslationProps | undefined => {
+    const peerBlock = peerItem?.description[idx];
+    const peerValue =
+      field === "text"
+        ? peerBlock?.text ?? ""
+        : peerBlock?.type === "bullet"
+          ? peerBlock.leadIn ?? ""
+          : "";
+    const path =
+      field === "text"
+        ? tpath.descriptionBlockText(section.id, itemId, idx)
+        : tpath.descriptionBlockLeadIn(section.id, itemId, idx);
+    return {
+      path,
+      peerValue,
+      applyTranslation: (translated) =>
+        setResumeForLocale(peerLocale, (r) =>
+          withDescriptionBlock(r, section.id, itemId, idx, {
+            [field]: translated,
+          } as Partial<DescriptionBlock>),
+        ),
+    };
+  };
+
+  const labelTranslationFor = (
+    linkId: string,
+  ): TranslationProps | undefined => {
+    const peerLink = peerItem?.links.find((l) => l.id === linkId);
+    return {
+      path: tpath.showcaseLinkLabel(section.id, itemId, linkId),
+      peerValue: peerLink?.label ?? "",
+      applyTranslation: (translated) =>
+        setResumeForLocale(peerLocale, (r) =>
+          withShowcaseLink(r, section.id, itemId, linkId, {
+            label: translated,
+          }),
+        ),
+    };
+  };
 
   return (
     <div>
@@ -266,6 +421,7 @@ function ShowcaseItemForm({
             withShowcaseItem(r, section.id, itemId, { title }),
           )
         }
+        translation={titleTranslation}
       />
       {/* techStack = list of tags → Shared. */}
       <TextField
@@ -299,6 +455,7 @@ function ShowcaseItemForm({
             withDescriptionBlockRemoved(r, section.id, itemId, idx),
           )
         }
+        blockTranslationFor={blockTranslationFor}
       />
       <LinkListEditor
         links={item.links}
@@ -330,6 +487,7 @@ function ShowcaseItemForm({
             withShowcaseLinkRemoved(r, section.id, itemId, linkId),
           )
         }
+        labelTranslationFor={labelTranslationFor}
       />
     </div>
   );
@@ -346,8 +504,28 @@ function CategorizedTagsItemForm({
 }) {
   const setResumeActiveLocale = useStore((s) => s.setResumeActiveLocale);
   const setResumeBothLocales = useStore((s) => s.setResumeBothLocales);
+  const setResumeForLocale = useStore((s) => s.setResumeForLocale);
+  const peerResume = usePeerResume();
+  const peerLocale = usePeerLocale();
   const item = section.items.find((i) => i.id === itemId);
   if (!item) return null;
+
+  const peerSection = peerResume?.sections.find((s) => s.id === section.id);
+  const peerItem =
+    peerSection?.type === "categorizedTags"
+      ? peerSection.items.find((i) => i.id === itemId)
+      : undefined;
+
+  const categoryTranslation: TranslationProps = {
+    path: tpath.categorizedTagsItemCategory(section.id, itemId),
+    peerValue: peerItem?.category ?? "",
+    applyTranslation: (translated) =>
+      setResumeForLocale(peerLocale, (r) =>
+        withCategorizedTagsItem(r, section.id, itemId, {
+          category: translated,
+        }),
+      ),
+  };
 
   return (
     <div>
@@ -361,6 +539,7 @@ function CategorizedTagsItemForm({
             withCategorizedTagsItem(r, section.id, itemId, { category }),
           )
         }
+        translation={categoryTranslation}
       />
       {/* Tags = proper-noun-ish skill names → Shared. */}
       <TagListEditor
@@ -386,6 +565,20 @@ export function SectionForm({
 }) {
   // section.title is Translatable.
   const setResumeActiveLocale = useStore((s) => s.setResumeActiveLocale);
+  const setResumeForLocale = useStore((s) => s.setResumeForLocale);
+  const peerResume = usePeerResume();
+  const peerLocale = usePeerLocale();
+  const peerSection = peerResume?.sections.find((s) => s.id === section.id);
+
+  const titleTranslation: TranslationProps = {
+    path: tpath.sectionTitle(section.id),
+    peerValue: peerSection?.title ?? "",
+    applyTranslation: (translated) =>
+      setResumeForLocale(peerLocale, (r) =>
+        withSectionTitle(r, section.id, translated),
+      ),
+  };
+
   return (
     <div>
       <FormHeading title={`Section · ${section.type}`} />
@@ -395,6 +588,7 @@ export function SectionForm({
         onChange={(title) =>
           setResumeActiveLocale((r) => withSectionTitle(r, section.id, title))
         }
+        translation={titleTranslation}
       />
     </div>
   );

@@ -1,5 +1,10 @@
 import { create } from "zustand";
 import { createDebouncedSaver, postResume, type Locale } from "./save.ts";
+import type {
+  FieldHash,
+  TranslationHashes,
+  TranslationPath,
+} from "./locale/translation.ts";
 import type { Resume } from "./types.ts";
 
 // What the sidebar currently has selected. Drives which form the center
@@ -42,6 +47,10 @@ type Store = {
   formPanelWidth: number;
   // Currently hovered sidebar row (drives preview highlight).
   hovered: HoveredTarget;
+  // Per-field translation hashes — see src/locale/translation.ts for the
+  // semantic model. Empty by default; populated by the blur-time commit
+  // pipeline and read by the stale-marker UI.
+  translationHashes: TranslationHashes;
 
   // Resume lifecycle
   setLoaded: (locales: LocalesBundle) => void;
@@ -61,6 +70,18 @@ type Store = {
   // The Shared vs Translatable taxonomy lives in src/locale/classification.ts.
   setResumeActiveLocale: (producer: (current: Resume) => Resume) => void;
   setResumeBothLocales: (producer: (current: Resume) => Resume) => void;
+  // Write to a specific locale (used by the translation pipeline to apply
+  // a DeepL result to the peer locale — neither active-only nor both
+  // applies cleanly there).
+  setResumeForLocale: (
+    locale: Locale,
+    producer: (current: Resume) => Resume,
+  ) => void;
+
+  // Merge a patch into translationHashes[path]. Keys whose value is
+  // undefined remove the entry on read (isFieldStale treats undefined as
+  // "no recorded hash").
+  setTranslationHashes: (path: TranslationPath, patch: FieldHash) => void;
 
   // Selection actions
   selectNone: () => void;
@@ -119,6 +140,7 @@ export const useStore = create<Store>((set) => ({
   sidebarWidth: 280,
   formPanelWidth: 380,
   hovered: { kind: "none" },
+  translationHashes: {},
 
   setLoaded: (locales) =>
     set((prev) => ({
@@ -163,6 +185,27 @@ export const useStore = create<Store>((set) => ({
         },
       };
     }),
+
+  setResumeForLocale: (locale, producer) =>
+    set((prev) => {
+      if (prev.state.status !== "loaded") return prev;
+      const nextResume = producer(prev.state.locales[locale]);
+      void debouncedSaveByLocale[locale](nextResume);
+      return {
+        state: {
+          status: "loaded",
+          locales: { ...prev.state.locales, [locale]: nextResume },
+        },
+      };
+    }),
+
+  setTranslationHashes: (path, patch) =>
+    set((prev) => ({
+      translationHashes: {
+        ...prev.translationHashes,
+        [path]: { ...prev.translationHashes[path], ...patch },
+      },
+    })),
 
   selectNone: () => set({ selection: { kind: "none" } }),
   // Selecting anything in the sidebar auto-expands the form panel — this

@@ -199,7 +199,7 @@ Commit with `feat(locale): backend DeepL translate endpoint` and push.
 
 ## Slice 5 — Frontend: blur-triggered translation + stale tracking
 
-- [ ] **Slice complete**
+- [x] **Slice complete**
 
 Sub-tasks:
 - [ ] Add hash-based stale tracking to `src/store.ts`: a `translationHashes: Record<fieldPath, { en?: hash; es?: hash }>` map (where `fieldPath` is something like `"sections.adia.subtitle"`).

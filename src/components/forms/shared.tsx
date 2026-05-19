@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
-import { Plus, X } from "lucide-react";
+import { AlertTriangle, Plus, X } from "lucide-react";
 import type {
   DateRange,
   DescriptionBlock,
@@ -8,6 +8,12 @@ import type {
   ShowcaseLink,
 } from "../../types.ts";
 import { theme } from "../../theme.ts";
+import { useStore } from "../../store.ts";
+import {
+  commitTranslation,
+  isFieldStale,
+  type TranslationPath,
+} from "../../locale/translation.ts";
 import { InlineConfirm } from "../InlineConfirm.tsx";
 
 // -- Shared styles ------------------------------------------------------
@@ -85,6 +91,112 @@ export const cardStyle: CSSProperties = {
   boxShadow: theme.shadow.card,
 };
 
+// -- Translation props + stale marker ----------------------------------
+
+// Passed to TextField / TextAreaField for Translatable fields. The
+// field-level on-blur handler invokes `commitTranslation` with these,
+// which calls the backend's /translate endpoint and writes the result
+// into the peer locale via `applyTranslation`.
+export type TranslationProps = {
+  path: TranslationPath;
+  /** Current peer-locale value at the same path. Used as the baseline-pin
+   *  hash on translation failure (see translation.ts). */
+  peerValue: string;
+  /** Writes the translated string into the peer locale. Caller composes
+   *  this from `setResumeForLocale(peerLocale, …)` plus the appropriate
+   *  field updater. */
+  applyTranslation: (translated: string) => void;
+};
+
+const labelRowStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "0.4rem",
+  marginBottom: "0.35rem",
+};
+
+const labelTextStyle: CSSProperties = {
+  fontSize: "0.72rem",
+  color: theme.color.panelTextMuted,
+  fontWeight: 600,
+  textTransform: "uppercase",
+  letterSpacing: "0.5px",
+  fontFamily: theme.font.family,
+};
+
+// Soft danger-color treatment per design-system §4: small icon, rose-500
+// (not alarm-red), no background fill. Acts as a button so the click
+// reaches `onRetry` — but visually it reads as a status indicator that
+// happens to be clickable, not a primary action.
+const staleMarkerStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "0.25rem",
+  background: "transparent",
+  border: "none",
+  padding: "2px 4px",
+  borderRadius: theme.radius.sm,
+  color: theme.color.danger,
+  cursor: "pointer",
+  fontFamily: theme.font.family,
+  fontSize: "0.66rem",
+  fontWeight: 600,
+  letterSpacing: "0.4px",
+  textTransform: "uppercase",
+  lineHeight: 1,
+};
+
+function StaleMarker({ onRetry }: { onRetry: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onRetry}
+      title="Translation out of sync — click to retry"
+      aria-label="Retry translation"
+      style={staleMarkerStyle}
+    >
+      <AlertTriangle size={12} strokeWidth={2.25} />
+      <span>Stale</span>
+    </button>
+  );
+}
+
+// React hook bundling the per-field translation wiring. Reads activeValue
+// (the current displayed value, i.e. the source for peer's translation)
+// so it can derive whether the peer is stale, and exposes `runCommit`
+// for the on-blur / retry handlers.
+function useTranslationField(
+  translation: TranslationProps | undefined,
+  activeValue: string,
+) {
+  const activeLocale = useStore((s) => s.activeLocale);
+  const hashes = useStore((s) =>
+    translation ? s.translationHashes[translation.path] : undefined,
+  );
+
+  if (!translation) {
+    return {
+      peerIsStale: false,
+      runCommit: (_v: string) => {},
+    };
+  }
+
+  // Peer is stale when hashes[peerLocale] (= hash of active value at last
+  // sync) no longer matches the current active value.
+  const peerLocale = activeLocale === "en" ? "es" : "en";
+  const peerIsStale = isFieldStale(hashes, peerLocale, activeValue);
+
+  const runCommit = (newActiveValue: string) =>
+    void commitTranslation({
+      path: translation.path,
+      newActiveValue,
+      peerValueAtAttempt: translation.peerValue,
+      applyTranslation: translation.applyTranslation,
+    });
+  return { peerIsStale, runCommit };
+}
+
 // -- Text input ---------------------------------------------------------
 
 export function TextField({
@@ -92,25 +204,41 @@ export function TextField({
   value,
   onChange,
   placeholder,
+  translation,
 }: {
   label: string;
   value: string;
   onChange: (next: string) => void;
   placeholder?: string;
+  translation?: TranslationProps;
 }) {
+  const focusValueRef = useRef<string | null>(null);
+  const { peerIsStale, runCommit } = useTranslationField(translation, value);
   return (
     <div style={fieldGroupStyle}>
-      <label style={labelStyle}>{label}</label>
+      <div style={labelRowStyle}>
+        <span style={labelTextStyle}>{label}</span>
+        {peerIsStale ? <StaleMarker onRetry={() => runCommit(value)} /> : null}
+      </div>
       <input
         type="text"
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
         onFocus={(e) => {
+          focusValueRef.current = value;
           e.target.style.boxShadow = `0 0 0 2px ${theme.color.primary}`;
         }}
         onBlur={(e) => {
           e.target.style.boxShadow = "none";
+          if (
+            translation &&
+            focusValueRef.current !== null &&
+            focusValueRef.current !== value
+          ) {
+            runCommit(value);
+          }
+          focusValueRef.current = null;
         }}
         style={inputStyle}
       />
@@ -122,12 +250,16 @@ export function TextAreaField({
   label,
   value,
   onChange,
+  translation,
 }: {
   label: string;
   value: string;
   onChange: (next: string) => void;
+  translation?: TranslationProps;
 }) {
   const ref = useRef<HTMLTextAreaElement>(null);
+  const focusValueRef = useRef<string | null>(null);
+  const { peerIsStale, runCommit } = useTranslationField(translation, value);
   // Auto-grow to fit content. Runs before paint to avoid flash.
   useLayoutEffect(() => {
     const el = ref.current;
@@ -137,17 +269,29 @@ export function TextAreaField({
   }, [value]);
   return (
     <div style={fieldGroupStyle}>
-      <label style={labelStyle}>{label}</label>
+      <div style={labelRowStyle}>
+        <span style={labelTextStyle}>{label}</span>
+        {peerIsStale ? <StaleMarker onRetry={() => runCommit(value)} /> : null}
+      </div>
       <textarea
         ref={ref}
         value={value}
         rows={1}
         onChange={(e) => onChange(e.target.value)}
         onFocus={(e) => {
+          focusValueRef.current = value;
           e.target.style.boxShadow = `0 0 0 2px ${theme.color.primary}`;
         }}
         onBlur={(e) => {
           e.target.style.boxShadow = "none";
+          if (
+            translation &&
+            focusValueRef.current !== null &&
+            focusValueRef.current !== value
+          ) {
+            runCommit(value);
+          }
+          focusValueRef.current = null;
         }}
         style={textareaStyle}
       />
@@ -393,11 +537,14 @@ export function LinkListEditor({
   onUpdate,
   onAdd,
   onRemove,
+  labelTranslationFor,
 }: {
   links: ShowcaseLink[];
   onUpdate: (linkId: string, patch: Partial<Omit<ShowcaseLink, "id">>) => void;
   onAdd: () => void;
   onRemove: (linkId: string) => void;
+  /** Caller-supplied builder for the Translatable `label` field per link. */
+  labelTranslationFor?: (linkId: string) => TranslationProps | undefined;
 }) {
   return (
     <div style={fieldGroupStyle}>
@@ -447,6 +594,7 @@ export function LinkListEditor({
             label="Label"
             value={link.label}
             onChange={(label) => onUpdate(link.id, { label })}
+            translation={labelTranslationFor?.(link.id)}
           />
           <TextField
             label="URL"
@@ -471,11 +619,17 @@ export function DescriptionBlockEditor({
   onChange,
   onAdd,
   onRemove,
+  blockTranslationFor,
 }: {
   blocks: DescriptionBlock[];
   onChange: (idx: number, patch: Partial<DescriptionBlock>) => void;
   onAdd: (type: DescriptionBlock["type"]) => void;
   onRemove: (idx: number) => void;
+  /** Caller-supplied builder for Translatable block fields (text + leadIn). */
+  blockTranslationFor?: (
+    idx: number,
+    field: "text" | "leadIn",
+  ) => TranslationProps | undefined;
 }) {
   return (
     <div style={fieldGroupStyle}>
@@ -518,12 +672,14 @@ export function DescriptionBlockEditor({
               onChange={(leadIn) =>
                 onChange(idx, leadIn ? { leadIn } : { leadIn: undefined })
               }
+              translation={blockTranslationFor?.(idx, "leadIn")}
             />
           ) : null}
           <TextAreaField
             label="Text"
             value={block.text}
             onChange={(text) => onChange(idx, { text })}
+            translation={blockTranslationFor?.(idx, "text")}
           />
         </div>
       ))}
