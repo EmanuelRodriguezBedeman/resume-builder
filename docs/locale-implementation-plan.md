@@ -56,7 +56,7 @@ Read these before touching the dev tooling or merging across slices.
 
 ## Slice 1 — Backend dual-file storage
 
-- [ ] **Slice complete**
+- [x] **Slice complete** — `2b3b8b5`
 
 Sub-tasks:
 - [ ] Rename `data/resume.json` → `data/resume_en.json` (git mv).
@@ -89,7 +89,7 @@ Tests must pass before commit. Commit with `feat(locale): backend dual-file stor
 
 ## Slice 2 — Frontend store with locales + toolbar toggle
 
-- [ ] **Slice complete**
+- [x] **Slice complete** — `8a42751`
 
 Sub-tasks:
 - [ ] In `src/store.ts`: replace `state.resume` with `state.locales: { en: Resume; es: Resume }`. Add `activeLocale: "en" | "es"` (default `"en"`) and `setActiveLocale(locale)`.
@@ -123,7 +123,7 @@ Commit with `feat(locale): active-locale toggle + per-locale read/save` and push
 
 ## Slice 3 — Field classification + dual-write actions
 
-- [ ] **Slice complete**
+- [x] **Slice complete** — `1f1c4fb`
 
 Sub-tasks:
 - [ ] Create `src/locale/classification.ts`. Export the canonical lists of Shared vs Translatable from CONTEXT.md as TypeScript constants/types. Reference the ADR.
@@ -163,7 +163,7 @@ Run tests + manual smoke through every Sidebar action and every form field. Comm
 
 > **Parallel-safe**: this slice only touches `server/` and `render.yaml`. Can be done on a separate branch alongside Slice 2 or 3.
 
-- [ ] **Slice complete**
+- [x] **Slice complete** — `16082c7`
 
 Sub-tasks:
 - [ ] Decide and document where the DeepL key lives: `DEEPL_API_KEY` env var.
@@ -274,7 +274,7 @@ Commit with `feat(locale): auto-bootstrap Spanish locale on first load` and push
 
 ## Slice 7 — ZIP export of both PDFs
 
-- [ ] **Slice complete**
+- [x] **Slice complete** — `ddcfa11`
 
 Sub-tasks:
 - [ ] Install `jszip` (`npm i jszip`).
