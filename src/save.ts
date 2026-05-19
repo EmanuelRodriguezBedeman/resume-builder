@@ -1,5 +1,7 @@
 import type { Resume } from "./types.ts";
 
+export type Locale = "en" | "es";
+
 export type SaverFn = (resume: Resume) => Promise<void>;
 
 /**
@@ -27,12 +29,15 @@ export function createDebouncedSaver(
   };
 }
 
-/** POST the Resume to the backend. */
-export async function postResume(resume: Resume): Promise<void> {
+/** POST the Resume for a specific locale to the backend. */
+export async function postResume(
+  locale: Locale,
+  resume: Resume,
+): Promise<void> {
   const res = await fetch("/resume", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ resume }),
+    body: JSON.stringify({ locale, resume }),
   });
   if (!res.ok) {
     throw new Error(`POST /resume failed: ${res.status}`);

@@ -5,8 +5,9 @@ import { Resume } from "./pdf/Resume.tsx";
 import { HtmlPreview } from "./preview/HtmlPreview.tsx";
 import { FormPanel } from "./components/FormPanel.tsx";
 import { Sidebar } from "./components/Sidebar.tsx";
-import { useStore } from "./store.ts";
+import { useStore, type LocalesBundle } from "./store.ts";
 import { theme } from "./theme.ts";
+import type { Locale } from "./save.ts";
 import type { Resume as ResumeType } from "./types.ts";
 
 function slugifyName(name: string): string {
@@ -66,6 +67,44 @@ const brandIconStyle: CSSProperties = {
   backdropFilter: "blur(2px)",
 };
 
+const toolbarRightStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "0.75rem",
+};
+
+const localeToggleStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  padding: "2px",
+  borderRadius: theme.radius.sm,
+  background: "rgba(255, 255, 255, 0.08)",
+  border: "1px solid rgba(255, 255, 255, 0.20)",
+  fontFamily: theme.font.family,
+};
+
+const localeButtonBaseStyle: CSSProperties = {
+  minWidth: "34px",
+  padding: "0.32rem 0.55rem",
+  borderRadius: "4px",
+  border: "none",
+  background: "transparent",
+  color: "rgba(255, 255, 255, 0.65)",
+  fontFamily: theme.font.family,
+  fontWeight: 700,
+  fontSize: "0.72rem",
+  letterSpacing: "0.6px",
+  textTransform: "uppercase",
+  cursor: "pointer",
+};
+
+const localeButtonActiveStyle: CSSProperties = {
+  ...localeButtonBaseStyle,
+  background: theme.color.primary,
+  color: "#FFFFFF",
+  boxShadow: "0 1px 0 rgba(0, 0, 0, 0.25)",
+};
+
 const gradientButtonStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
@@ -90,15 +129,18 @@ const loadingScreenStyle: CSSProperties = {
   color: theme.color.textMuted,
 };
 
+type Envelope = { schemaVersion: number; locales: LocalesBundle };
+
 export function App() {
   const state = useStore((s) => s.state);
+  const activeLocale = useStore((s) => s.activeLocale);
   const setLoaded = useStore((s) => s.setLoaded);
   const setError = useStore((s) => s.setError);
 
   useEffect(() => {
     fetch("/resume")
-      .then((r) => r.json() as Promise<{ resume: ResumeType }>)
-      .then((data) => setLoaded(data.resume))
+      .then((r) => r.json() as Promise<Envelope>)
+      .then((data) => setLoaded(data.locales))
       .catch((err: unknown) => setError(String(err)));
   }, [setLoaded, setError]);
 
@@ -115,7 +157,31 @@ export function App() {
     return <main style={loadingScreenStyle}>Loading…</main>;
   }
 
-  return <LoadedApp resume={state.resume} />;
+  return <LoadedApp resume={state.locales[activeLocale]} />;
+}
+
+function LocaleToggle() {
+  const activeLocale = useStore((s) => s.activeLocale);
+  const setActiveLocale = useStore((s) => s.setActiveLocale);
+  const locales: Locale[] = ["en", "es"];
+  return (
+    <div style={localeToggleStyle} role="group" aria-label="Active locale">
+      {locales.map((loc) => {
+        const isActive = loc === activeLocale;
+        return (
+          <button
+            key={loc}
+            type="button"
+            onClick={() => setActiveLocale(loc)}
+            aria-pressed={isActive}
+            style={isActive ? localeButtonActiveStyle : localeButtonBaseStyle}
+          >
+            {loc.toUpperCase()}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 function LoadedApp({ resume }: { resume: ResumeType }) {
@@ -143,28 +209,31 @@ function LoadedApp({ resume }: { resume: ResumeType }) {
             </span>
           </span>
         </span>
-        <PDFDownloadLink
-          document={exportDocument}
-          fileName={fileName}
-          style={gradientButtonStyle}
-        >
-          {({ loading, error: dlError }) => {
-            if (dlError) return "Export failed";
-            return (
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "0.45rem",
-                  opacity: loading ? 0.7 : 1,
-                }}
-              >
-                <Download size={14} strokeWidth={2.5} />
-                {loading ? "Generating…" : "Export PDF"}
-              </span>
-            );
-          }}
-        </PDFDownloadLink>
+        <div style={toolbarRightStyle}>
+          <LocaleToggle />
+          <PDFDownloadLink
+            document={exportDocument}
+            fileName={fileName}
+            style={gradientButtonStyle}
+          >
+            {({ loading, error: dlError }) => {
+              if (dlError) return "Export failed";
+              return (
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.45rem",
+                    opacity: loading ? 0.7 : 1,
+                  }}
+                >
+                  <Download size={14} strokeWidth={2.5} />
+                  {loading ? "Generating…" : "Export PDF"}
+                </span>
+              );
+            }}
+          </PDFDownloadLink>
+        </div>
       </div>
       <div
         style={{

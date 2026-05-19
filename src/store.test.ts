@@ -23,7 +23,11 @@ beforeEach(() => {
     vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true }) }),
   );
   useStore.setState({
-    state: { status: "loaded", resume: sample },
+    state: {
+      status: "loaded",
+      locales: { en: sample, es: sample },
+    },
+    activeLocale: "en",
     selection: { kind: "none" },
     expandedSections: new Set(),
   });
@@ -45,16 +49,36 @@ describe("selection actions", () => {
   });
 });
 
+describe("setActiveLocale", () => {
+  test("flips the activeLocale flag", () => {
+    expect(useStore.getState().activeLocale).toBe("en");
+    useStore.getState().setActiveLocale("es");
+    expect(useStore.getState().activeLocale).toBe("es");
+  });
+});
+
 describe("updateHeaderName", () => {
-  test("mutates the resume header name and leaves the rest untouched", () => {
+  test("mutates only the active locale's header name", () => {
     useStore.getState().updateHeaderName("New Name");
 
     const state = useStore.getState().state;
     expect(state.status).toBe("loaded");
     if (state.status !== "loaded") return;
-    expect(state.resume.header.name).toBe("New Name");
-    expect(state.resume.header.items).toEqual(sample.header.items);
-    expect(state.resume.sections).toEqual(sample.sections);
+    expect(state.locales.en.header.name).toBe("New Name");
+    // Sibling locale untouched in Slice 2 (no propagation yet).
+    expect(state.locales.es.header.name).toBe("Original Name");
+    expect(state.locales.en.header.items).toEqual(sample.header.items);
+    expect(state.locales.en.sections).toEqual(sample.sections);
+  });
+
+  test("writes to ES when ES is the active locale", () => {
+    useStore.getState().setActiveLocale("es");
+    useStore.getState().updateHeaderName("Nombre Nuevo");
+
+    const state = useStore.getState().state;
+    if (state.status !== "loaded") return;
+    expect(state.locales.es.header.name).toBe("Nombre Nuevo");
+    expect(state.locales.en.header.name).toBe("Original Name");
   });
 
   test("is a no-op when the resume is not loaded", () => {

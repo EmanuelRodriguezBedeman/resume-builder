@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { createDebouncedSaver, postResume } from "./save.ts";
+import { createDebouncedSaver, postResume, type Locale } from "./save.ts";
 import type { Resume } from "./types.ts";
 
 // What the sidebar currently has selected. Drives which form the center
@@ -20,13 +20,16 @@ export type HoveredTarget =
   | { kind: "section"; sectionId: string }
   | { kind: "item"; sectionId: string; itemId: string };
 
+export type LocalesBundle = { en: Resume; es: Resume };
+
 type ResumeState =
   | { status: "loading" }
-  | { status: "loaded"; resume: Resume }
+  | { status: "loaded"; locales: LocalesBundle }
   | { status: "error"; error: string };
 
 type Store = {
   state: ResumeState;
+  activeLocale: Locale;
   selection: Selection;
   expandedSections: Set<string>;
   // The right form panel is collapsible. Starts collapsed; auto-expands
@@ -41,10 +44,13 @@ type Store = {
   hovered: HoveredTarget;
 
   // Resume lifecycle
-  setLoaded: (resume: Resume) => void;
+  setLoaded: (locales: LocalesBundle) => void;
   setError: (error: string) => void;
+  setActiveLocale: (locale: Locale) => void;
 
-  // Mutations (each one auto-saves to the backend, debounced)
+  // Mutations (each one auto-saves to the backend, debounced).
+  // In Slice 2 every mutation only touches the active locale. Slice 3
+  // splits this into setResumeActiveLocale vs setResumeBothLocales.
   updateHeaderName: (name: string) => void;
   // Generic producer-based mutation. Form widgets pass a pure updater from
   // src/updaters.ts and the store handles the save side effect.
@@ -75,7 +81,12 @@ type Store = {
 };
 
 const DEBOUNCE_MS = 500;
-const debouncedSave = createDebouncedSaver(postResume, DEBOUNCE_MS);
+// One debouncer per locale so that toggling active locale mid-edit doesn't
+// drop the pending write to the other locale.
+const debouncedSaveByLocale: Record<Locale, ReturnType<typeof createDebouncedSaver>> = {
+  en: createDebouncedSaver((resume) => postResume("en", resume), DEBOUNCE_MS),
+  es: createDebouncedSaver((resume) => postResume("es", resume), DEBOUNCE_MS),
+};
 
 const SIDEBAR_MIN_WIDTH = 220;
 const SIDEBAR_MAX_WIDTH = 500;
@@ -85,8 +96,16 @@ const FORM_PANEL_MAX_WIDTH = 650;
 const clamp = (n: number, lo: number, hi: number) =>
   Math.max(lo, Math.min(hi, n));
 
+/**
+ * Read-only helper to grab the currently active locale's Resume from the
+ * store. Returns null when state isn't `loaded`.
+ */
+export const selectActiveResume = (s: Store): Resume | null =>
+  s.state.status === "loaded" ? s.state.locales[s.activeLocale] : null;
+
 export const useStore = create<Store>((set) => ({
   state: { status: "loading" },
+  activeLocale: "en",
   selection: { kind: "none" },
   expandedSections: new Set<string>(),
   panelCollapsed: true,
@@ -95,30 +114,48 @@ export const useStore = create<Store>((set) => ({
   formPanelWidth: 380,
   hovered: { kind: "none" },
 
-  setLoaded: (resume) =>
-    set({
-      state: { status: "loaded", resume },
-      expandedSections: new Set(resume.sections.map((s) => s.id)),
-    }),
+  setLoaded: (locales) =>
+    set((prev) => ({
+      state: { status: "loaded", locales },
+      // Expansion is driven by section IDs in the active locale. IDs are
+      // shared across locales (Slice 3 makes that invariant explicit), so
+      // either side gives the same set.
+      expandedSections: new Set(locales[prev.activeLocale].sections.map((s) => s.id)),
+    })),
   setError: (error) => set({ state: { status: "error", error } }),
+
+  setActiveLocale: (locale) => set({ activeLocale: locale }),
 
   updateHeaderName: (name) =>
     set((prev) => {
       if (prev.state.status !== "loaded") return prev;
+      const locale = prev.activeLocale;
+      const currentResume = prev.state.locales[locale];
       const nextResume: Resume = {
-        ...prev.state.resume,
-        header: { ...prev.state.resume.header, name },
+        ...currentResume,
+        header: { ...currentResume.header, name },
       };
-      void debouncedSave(nextResume);
-      return { state: { status: "loaded", resume: nextResume } };
+      void debouncedSaveByLocale[locale](nextResume);
+      return {
+        state: {
+          status: "loaded",
+          locales: { ...prev.state.locales, [locale]: nextResume },
+        },
+      };
     }),
 
   setResume: (producer) =>
     set((prev) => {
       if (prev.state.status !== "loaded") return prev;
-      const nextResume = producer(prev.state.resume);
-      void debouncedSave(nextResume);
-      return { state: { status: "loaded", resume: nextResume } };
+      const locale = prev.activeLocale;
+      const nextResume = producer(prev.state.locales[locale]);
+      void debouncedSaveByLocale[locale](nextResume);
+      return {
+        state: {
+          status: "loaded",
+          locales: { ...prev.state.locales, [locale]: nextResume },
+        },
+      };
     }),
 
   selectNone: () => set({ selection: { kind: "none" } }),

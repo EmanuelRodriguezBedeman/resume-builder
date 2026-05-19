@@ -15,7 +15,9 @@ export const SectionRenderer = memo(function SectionRenderer({
 }) {
   const dispatchKey = useStore((s) => {
     if (s.state.status !== "loaded") return null;
-    const section = s.state.resume.sections.find((sec) => sec.id === sectionId);
+    const section = s.state.locales[s.activeLocale].sections.find(
+      (sec) => sec.id === sectionId,
+    );
     if (!section || section.hidden) return null;
     return section.type;
   });

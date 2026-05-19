@@ -53,13 +53,13 @@ export const TimelineSection = memo(function TimelineSection({
 }) {
   const title = useStore((s) => {
     if (s.state.status !== "loaded") return "";
-    const section = s.state.resume.sections.find((sec) => sec.id === sectionId);
+    const section = s.state.locales[s.activeLocale].sections.find((sec) => sec.id === sectionId);
     return section?.title ?? "";
   });
   const itemIds = useStore(
     useShallow((s) => {
       if (s.state.status !== "loaded") return [];
-      const section = s.state.resume.sections.find(
+      const section = s.state.locales[s.activeLocale].sections.find(
         (sec) => sec.id === sectionId,
       );
       if (!section || section.type !== "timeline") return [];
@@ -102,7 +102,7 @@ const TimelineItem = memo(function TimelineItem({
 }) {
   const item = useStore((s) => {
     if (s.state.status !== "loaded") return null;
-    const section = s.state.resume.sections.find((sec) => sec.id === sectionId);
+    const section = s.state.locales[s.activeLocale].sections.find((sec) => sec.id === sectionId);
     if (!section || section.type !== "timeline") return null;
     return section.items.find((i) => i.id === itemId) ?? null;
   });

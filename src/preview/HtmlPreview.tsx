@@ -44,7 +44,7 @@ export const HtmlPreview = memo(function HtmlPreview() {
   const sectionIds = useStore(
     useShallow((s) =>
       s.state.status === "loaded"
-        ? s.state.resume.sections.map((sec) => sec.id)
+        ? s.state.locales[s.activeLocale].sections.map((sec) => sec.id)
         : [],
     ),
   );

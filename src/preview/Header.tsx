@@ -81,7 +81,9 @@ function HeaderItemView({ item }: { item: HeaderItem }) {
 // object reference changes (i.e. any header field was edited).
 export const Header = memo(function Header() {
   const header = useStore((s) =>
-    s.state.status === "loaded" ? s.state.resume.header : null,
+    s.state.status === "loaded"
+      ? s.state.locales[s.activeLocale].header
+      : null,
   );
   const isHovered = useStore((s) => s.hovered.kind === "header");
   const isSelected = useStore((s) => s.selection.kind === "header");
