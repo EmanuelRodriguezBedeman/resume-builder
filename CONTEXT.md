@@ -34,11 +34,27 @@ The special `Section type` always rendered at the top of the `Resume`. Contains 
 **Categorized tags section**:
 `Section type` used for Skills. Items are categories (e.g. Primary, Secondary, Databases), each with a comma-separated list of tags. Each row renders as `bold-category: tag, tag, tag`.
 
+**Locale**:
+A language version of the `Resume`. The app supports two locales: `en` (English) and `es` (Spanish). Locales are **peers** — neither is the source of truth, both are valid edit targets.
+
+**Active locale**:
+The locale currently being edited and previewed. Toggled from the toolbar. Drives what the sidebar, form panel, and live preview render.
+
+**Translatable field**:
+A field whose value differs between locales. Examples: `section.title`, `descriptionBlock.text` / `.leadIn`, `categorizedTagsItem.category`, `ShowcaseItem.title`, `TimelineItem.subtitle`, `CompactGridItem.subtitle`, `ShowcaseLink.label`. Edits to a Translatable field on field blur trigger automatic translation into the other locale.
+
+**Shared field**:
+A field whose value is identical across all locales. Edits propagate to every locale immediately. Examples: every `id`, every `href`, every `IconName`, `section.type`, `section.hidden`, `schemaVersion`, all date strings (the rendered month name is per-locale, but the stored ISO date is shared), `header.name`, `header.items[*].text` and `.href` (the entire `Header` is shared — proper nouns / contact data don't translate), `TimelineItem.title` (organization names), `CompactGridItem.title` (institution names), `ShowcaseItem.techStack`, `CategorizedTagsItem.tags`.
+
+**Stale field**:
+A `Translatable field` whose other-locale counterpart no longer reflects the source text — typically because the translation service was unavailable when the source was edited. Surfaced with a ⚠ indicator and a manual retry.
+
 ## Relationships
 
 - A `Resume` has exactly one `Header` and many other `Sections`
 - A `Section` has exactly one `Section type` and many `Items`
 - An `Item`'s available fields are determined by its parent section's `Section type`
+- Every `Resume` exists in N `Locales` simultaneously; structure (`id`s, ordering, `Section type`, `Shared field` values) is identical across locales, only `Translatable field` values differ
 
 ## Flagged ambiguities
 
