@@ -13,6 +13,9 @@ desktop.ini
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
 
+# Local env (contains secrets — never commit)
+.env
+
 # Logs / temp
 *.log
 *.tmp
