@@ -157,13 +157,23 @@ export function App() {
   const activeLocale = useStore((s) => s.activeLocale);
   const setLoaded = useStore((s) => s.setLoaded);
   const setError = useStore((s) => s.setError);
+  const setTranslationOverrides = useStore((s) => s.setTranslationOverrides);
 
   useEffect(() => {
-    fetch("/resume")
-      .then((r) => r.json() as Promise<Envelope>)
-      .then((data) => setLoaded(data.locales))
+    Promise.all([
+      fetch("/resume").then((r) => r.json() as Promise<Envelope>),
+      fetch("/overrides").then(
+        (r) => r.json() as Promise<{ overrides: Record<string, boolean> }>,
+      ),
+    ])
+      .then(([resumeData, overridesData]) => {
+        setLoaded(resumeData.locales);
+        setTranslationOverrides(
+          overridesData.overrides as Record<string, boolean>,
+        );
+      })
       .catch((err: unknown) => setError(String(err)));
-  }, [setLoaded, setError]);
+  }, [setLoaded, setError, setTranslationOverrides]);
 
   if (state.status === "error") {
     return (

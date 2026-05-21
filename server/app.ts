@@ -10,6 +10,7 @@ import {
   MissingDeepLKeyError,
   translateText,
 } from "./translate.ts";
+import { readOverrides, writeOverride } from "./overrides.ts";
 
 const ENVELOPE_SCHEMA_VERSION = 1;
 
@@ -50,6 +51,38 @@ export function createApp(dataDir: string) {
       return c.json({ ok: true });
     } catch (err) {
       console.error("[server] writeLocale failed:", err);
+      return c.json({ error: "write_failed" }, 500);
+    }
+  });
+
+  app.get("/overrides", async (c) => {
+    try {
+      const overrides = await readOverrides(dataDir);
+      return c.json({ overrides });
+    } catch (err) {
+      console.error("[server] readOverrides failed:", err);
+      return c.json({ error: "read_failed" }, 500);
+    }
+  });
+
+  app.post("/overrides", async (c) => {
+    let body: { path?: unknown; locked?: unknown };
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json({ error: "invalid_json" }, 400);
+    }
+    if (typeof body.path !== "string" || !body.path) {
+      return c.json({ error: "missing_path" }, 400);
+    }
+    if (typeof body.locked !== "boolean") {
+      return c.json({ error: "missing_locked" }, 400);
+    }
+    try {
+      await writeOverride(dataDir, body.path, body.locked);
+      return c.json({ ok: true });
+    } catch (err) {
+      console.error("[server] writeOverride failed:", err);
       return c.json({ error: "write_failed" }, 500);
     }
   });

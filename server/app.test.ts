@@ -236,3 +236,81 @@ describe("POST /translate", () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe("GET /overrides and POST /overrides", () => {
+  let dir: string;
+  let app: ReturnType<typeof createApp>;
+
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), "resume-builder-overrides-app-"));
+    app = createApp(dir);
+  });
+
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  test("GET /overrides returns empty object when no file exists", async () => {
+    const res = await app.request("/overrides");
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ overrides: {} });
+  });
+
+  test("POST /overrides persists a locked path", async () => {
+    const postRes = await app.request("/overrides", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ path: "section:exp:item:abc:subtitle", locked: true }),
+    });
+    expect(postRes.status).toBe(200);
+    expect(await postRes.json()).toEqual({ ok: true });
+
+    const getRes = await app.request("/overrides");
+    expect(await getRes.json()).toEqual({
+      overrides: { "section:exp:item:abc:subtitle": true },
+    });
+  });
+
+  test("POST /overrides locked:false removes the path", async () => {
+    await app.request("/overrides", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ path: "section:exp:item:abc:subtitle", locked: true }),
+    });
+    await app.request("/overrides", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ path: "section:exp:item:abc:subtitle", locked: false }),
+    });
+
+    const getRes = await app.request("/overrides");
+    expect(await getRes.json()).toEqual({ overrides: {} });
+  });
+
+  test("POST /overrides without path returns 400", async () => {
+    const res = await app.request("/overrides", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ locked: true }),
+    });
+    expect(res.status).toBe(400);
+  });
+
+  test("POST /overrides without locked returns 400", async () => {
+    const res = await app.request("/overrides", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ path: "some:path" }),
+    });
+    expect(res.status).toBe(400);
+  });
+
+  test("POST /overrides with invalid JSON returns 400", async () => {
+    const res = await app.request("/overrides", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "{not json",
+    });
+    expect(res.status).toBe(400);
+  });
+});

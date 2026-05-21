@@ -57,6 +57,10 @@ type Store = {
   // Ephemeral error message shown as a toast when a translation fails.
   // Auto-cleared by the toast component after a few seconds.
   translationErrorMsg: string | null;
+  // Per-field translation override map. When a path is present and true,
+  // the field's active-locale value is copied verbatim to the peer locale
+  // instead of being sent to DeepL. Loaded from GET /overrides on init.
+  translationOverrides: Record<TranslationPath, boolean>;
 
   // Resume lifecycle
   setLoaded: (locales: LocalesBundle) => void;
@@ -90,6 +94,8 @@ type Store = {
   setTranslationHashes: (path: TranslationPath, patch: FieldHash) => void;
   setTranslationPending: (path: TranslationPath, pending: boolean) => void;
   setTranslationErrorMsg: (msg: string | null) => void;
+  setTranslationOverrides: (overrides: Record<TranslationPath, boolean>) => void;
+  setTranslationOverride: (path: TranslationPath, locked: boolean) => void;
 
   // Selection actions
   selectNone: () => void;
@@ -151,6 +157,7 @@ export const useStore = create<Store>((set) => ({
   translationHashes: {},
   translationPending: new Set<TranslationPath>(),
   translationErrorMsg: null,
+  translationOverrides: {} as Record<TranslationPath, boolean>,
 
   setLoaded: (locales) =>
     set((prev) => ({
@@ -226,6 +233,25 @@ export const useStore = create<Store>((set) => ({
     }),
 
   setTranslationErrorMsg: (msg) => set({ translationErrorMsg: msg }),
+
+  setTranslationOverrides: (overrides) => set({ translationOverrides: overrides }),
+
+  setTranslationOverride: (path, locked) => {
+    set((prev) => {
+      const next = { ...prev.translationOverrides };
+      if (locked) {
+        next[path] = true;
+      } else {
+        delete next[path];
+      }
+      return { translationOverrides: next };
+    });
+    void fetch("/overrides", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ path, locked }),
+    });
+  },
 
   selectNone: () => set({ selection: { kind: "none" } }),
   // Selecting anything in the sidebar auto-expands the form panel — this

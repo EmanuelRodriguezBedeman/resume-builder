@@ -16,6 +16,9 @@ desktop.ini
 # Local env (contains secrets — never commit)
 .env
 
+# Per-field translation overrides (local user preference, not shared)
+data/translation-overrides.json
+
 # Logs / temp
 *.log
 *.tmp
