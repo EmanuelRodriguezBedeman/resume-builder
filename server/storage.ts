@@ -45,14 +45,27 @@ async function writeJsonAtomic(filePath: string, resume: Resume): Promise<void> 
   await rename(tmpPath, filePath);
 }
 
+// Dedup concurrent bootstrap calls: if two GET /resume requests arrive
+// before resume_es.json exists, only one DeepL run fires — the second
+// awaits the same promise instead of starting its own.
+const bootstrapInFlight = new Map<string, Promise<Resume>>();
+
 export async function readBothLocales(dir: string): Promise<LocalesBundle> {
   const en =
     (await readJsonOrNull(localeFile(dir, "en"))) ??
     structuredClone(DEFAULT_RESUME);
   let es = await readJsonOrNull(localeFile(dir, "es"));
   if (es === null) {
-    es = await bootstrapSpanishFromEnglish(en);
-    await writeJsonAtomic(localeFile(dir, "es"), es);
+    let inFlight = bootstrapInFlight.get(dir);
+    if (!inFlight) {
+      inFlight = bootstrapSpanishFromEnglish(en).then(async (result) => {
+        await writeJsonAtomic(localeFile(dir, "es"), result);
+        bootstrapInFlight.delete(dir);
+        return result;
+      });
+      bootstrapInFlight.set(dir, inFlight);
+    }
+    es = await inFlight;
   }
   return { en, es };
 }

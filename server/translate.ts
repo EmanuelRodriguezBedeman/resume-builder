@@ -35,6 +35,8 @@ type DeepLResponse = {
   translations?: Array<{ text?: string }>;
 };
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 export async function translateText(
   text: string,
   targetLocale: Locale,
@@ -44,48 +46,57 @@ export async function translateText(
     throw new MissingDeepLKeyError();
   }
 
-  let res: Response;
-  try {
-    res = await fetch(DEEPL_FREE_API_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `DeepL-Auth-Key ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        text: [text],
-        target_lang: TARGET_LANG[targetLocale],
-        source_lang: SOURCE_LANG[targetLocale],
-      }),
-    });
-  } catch (err) {
-    throw new DeepLRequestError(
-      `DeepL fetch failed: ${(err as Error).message}`,
-    );
+  const body = JSON.stringify({
+    text: [text],
+    target_lang: TARGET_LANG[targetLocale],
+    source_lang: SOURCE_LANG[targetLocale],
+  });
+  const headers = {
+    Authorization: `DeepL-Auth-Key ${apiKey}`,
+    "Content-Type": "application/json",
+  };
+
+  // Retry up to 3 times on 429 (rate-limit) with exponential backoff.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    let res: Response;
+    try {
+      res = await fetch(DEEPL_FREE_API_URL, { method: "POST", headers, body });
+    } catch (err) {
+      throw new DeepLRequestError(
+        `DeepL fetch failed: ${(err as Error).message}`,
+      );
+    }
+
+    if (res.status === 429 && attempt < 2) {
+      await sleep(1500 * (attempt + 1)); // 1.5s, then 3s
+      continue;
+    }
+
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => "");
+      throw new DeepLRequestError(
+        `DeepL responded ${res.status}: ${errBody}`,
+        res.status,
+      );
+    }
+
+    let json: DeepLResponse;
+    try {
+      json = (await res.json()) as DeepLResponse;
+    } catch (err) {
+      throw new DeepLRequestError(
+        `DeepL returned invalid JSON: ${(err as Error).message}`,
+      );
+    }
+
+    const translated = json.translations?.[0]?.text;
+    if (typeof translated !== "string") {
+      throw new DeepLRequestError(
+        "DeepL response missing translations[0].text",
+      );
+    }
+    return translated;
   }
 
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new DeepLRequestError(
-      `DeepL responded ${res.status}: ${body}`,
-      res.status,
-    );
-  }
-
-  let json: DeepLResponse;
-  try {
-    json = (await res.json()) as DeepLResponse;
-  } catch (err) {
-    throw new DeepLRequestError(
-      `DeepL returned invalid JSON: ${(err as Error).message}`,
-    );
-  }
-
-  const translated = json.translations?.[0]?.text;
-  if (typeof translated !== "string") {
-    throw new DeepLRequestError(
-      "DeepL response missing translations[0].text",
-    );
-  }
-  return translated;
+  throw new DeepLRequestError("DeepL rate-limited after 3 attempts", 429);
 }
