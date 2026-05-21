@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
-import { AlertTriangle, Loader2, Plus, X } from "lucide-react";
+import { AlertTriangle, Languages, Loader2, Plus, X } from "lucide-react";
 import type {
   DateRange,
   DescriptionBlock,
@@ -14,6 +14,7 @@ import {
   isFieldStale,
   type TranslationPath,
 } from "../../locale/translation.ts";
+import type { Locale } from "../../save.ts";
 import { InlineConfirm } from "../InlineConfirm.tsx";
 
 // -- Shared styles ------------------------------------------------------
@@ -192,6 +193,67 @@ function StaleMarker({ onRetry }: { onRetry: () => void }) {
   );
 }
 
+// Translation lock toggle. Uses the lucide `Languages` icon (two speech
+// bubbles A/文). Green = auto-translating; gray + diagonal strikethrough
+// = literal / locked. Analogous to Eye / EyeOff for section visibility.
+function LockIcon({
+  isLocked,
+  onToggle,
+}: {
+  isLocked: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      title={
+        isLocked
+          ? "Literal (not translated) — click to re-enable auto-translation"
+          : "Auto-translating — click to lock as literal"
+      }
+      aria-label={isLocked ? "Translation locked — click to unlock" : "Click to lock translation"}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        background: "transparent",
+        border: "none",
+        cursor: "pointer",
+        padding: "2px 4px",
+        borderRadius: theme.radius.sm,
+        color: isLocked ? theme.color.panelTextMuted : "#22C55E",
+      }}
+    >
+      <span style={{ position: "relative", display: "inline-flex" }}>
+        <Languages size={12} strokeWidth={2.25} />
+        {isLocked && (
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 12 12"
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "12px",
+              height: "12px",
+              pointerEvents: "none",
+            }}
+          >
+            <line
+              x1="1"
+              y1="1"
+              x2="11"
+              y2="11"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+            />
+          </svg>
+        )}
+      </span>
+    </button>
+  );
+}
+
 // React hook bundling the per-field translation wiring. Reads activeValue
 // (the current displayed value, i.e. the source for peer's translation)
 // so it can derive whether the peer is stale, and exposes `runCommit`
@@ -207,18 +269,25 @@ function useTranslationField(
   const translating = useStore((s) =>
     translation ? s.translationPending.has(translation.path) : false,
   );
+  const isLocked = useStore((s) =>
+    translation ? (s.translationOverrides[translation.path] ?? false) : false,
+  );
+  const setTranslationOverride = useStore((s) => s.setTranslationOverride);
+  const setTranslationHashes = useStore((s) => s.setTranslationHashes);
 
   if (!translation) {
     return {
       peerIsStale: false,
       translating: false,
+      isLocked: false,
       runCommit: (_v: string) => {},
+      handleToggleLock: () => {},
     };
   }
 
   // Peer is stale when hashes[peerLocale] (= hash of active value at last
   // sync) no longer matches the current active value.
-  const peerLocale = activeLocale === "en" ? "es" : "en";
+  const peerLocale: Locale = activeLocale === "en" ? "es" : "en";
   const peerIsStale = isFieldStale(hashes, peerLocale, activeValue);
 
   const runCommit = (newActiveValue: string) =>
@@ -228,7 +297,21 @@ function useTranslationField(
       peerValueAtAttempt: translation.peerValue,
       applyTranslation: translation.applyTranslation,
     });
-  return { peerIsStale, translating, runCommit };
+
+  const handleToggleLock = () => {
+    if (!isLocked) {
+      // Locking: copy active value verbatim to peer, clear hashes.
+      translation.applyTranslation(activeValue);
+      setTranslationOverride(translation.path, true);
+      setTranslationHashes(translation.path, { en: undefined, es: undefined });
+    } else {
+      // Unlocking: mark peer stale so the next blur triggers DeepL.
+      setTranslationOverride(translation.path, false);
+      setTranslationHashes(translation.path, { [peerLocale]: "__stale__" });
+    }
+  };
+
+  return { peerIsStale, translating, isLocked, runCommit, handleToggleLock };
 }
 
 // -- Text input ---------------------------------------------------------
@@ -247,7 +330,7 @@ export function TextField({
   translation?: TranslationProps;
 }) {
   const focusValueRef = useRef<string | null>(null);
-  const { peerIsStale, translating, runCommit } = useTranslationField(translation, value);
+  const { peerIsStale, translating, isLocked, runCommit, handleToggleLock } = useTranslationField(translation, value);
   return (
     <div style={fieldGroupStyle}>
       <div style={labelRowStyle}>
@@ -256,6 +339,8 @@ export function TextField({
           <TranslatingSpinner />
         ) : peerIsStale ? (
           <StaleMarker onRetry={() => runCommit(value)} />
+        ) : translation ? (
+          <LockIcon isLocked={isLocked} onToggle={handleToggleLock} />
         ) : null}
       </div>
       <input
@@ -297,7 +382,7 @@ export function TextAreaField({
 }) {
   const ref = useRef<HTMLTextAreaElement>(null);
   const focusValueRef = useRef<string | null>(null);
-  const { peerIsStale, translating, runCommit } = useTranslationField(translation, value);
+  const { peerIsStale, translating, isLocked, runCommit, handleToggleLock } = useTranslationField(translation, value);
   // Auto-grow to fit content. Runs before paint to avoid flash.
   useLayoutEffect(() => {
     const el = ref.current;
@@ -313,6 +398,8 @@ export function TextAreaField({
           <TranslatingSpinner />
         ) : peerIsStale ? (
           <StaleMarker onRetry={() => runCommit(value)} />
+        ) : translation ? (
+          <LockIcon isLocked={isLocked} onToggle={handleToggleLock} />
         ) : null}
       </div>
       <textarea

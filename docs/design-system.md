@@ -146,21 +146,29 @@ Pattern for editing groups of related fields inside the dark form panel:
 **Default**: `background: panelInputBg`, no visible border (just `1px solid transparent` to reserve space).
 **Focus**: imperative `boxShadow: 0 0 0 2px ${primary}` set in `onFocus` handler; cleared in `onBlur`. Used in [`src/components/forms/shared.tsx`](../src/components/forms/shared.tsx).
 
-### Translation feedback (loading + stale)
+### Translation feedback (loading + stale + lock)
 
-Three states for the label row of a Translatable field:
+Four states for the label row of a Translatable field:
 
 | State | Visual | Location |
 |---|---|---|
 | **In-flight** | `Loader2` icon spinning (rAF-driven, no CSS file) in `primary` color at 75% opacity | Replaces stale marker while fetch is running |
 | **Stale** | `AlertTriangle` icon + "Stale" text in `danger` rose, transparent bg, clickable | Appears when peer locale is out of sync; click retries the translation |
-| **Synced / idle** | Nothing | No indicator shown |
+| **Locked (literal)** | `Languages` icon in `panelTextMuted` gray + SVG diagonal strikethrough overlay | Field copies active value verbatim — DeepL is skipped |
+| **Unlocked / idle** | `Languages` icon in `#22C55E` green | Default for all Translatable fields when neither in-flight nor stale |
 
-**Priority**: spinner takes precedence over stale (both can't coexist meaningfully — if translating, stale-or-not is in flux).
+**Priority**: Spinner > StaleMarker > LockIcon. Spinner and stale marker are transient; lock is persistent.
+
+**Lock toggle behaviour**:
+- **Lock ON** (green → gray+strike): copies active-locale value verbatim to peer locale, calls `setTranslationOverride(path, true)`, clears hashes.
+- **Lock OFF** (gray+strike → green): calls `setTranslationOverride(path, false)`, forces peer stale so the next blur triggers DeepL.
+- While locked, `commitTranslation` short-circuits: copies active value verbatim instead of calling DeepL.
+
+Persistence: `data/translation-overrides.json` (flat `Record<TranslationPath, boolean>`, gitignored). Loaded on app init via `GET /overrides`. Implemented in [`src/components/forms/shared.tsx`](../src/components/forms/shared.tsx) as `LockIcon` + `handleToggleLock`.
 
 **Error toast**: when a translation fetch fails, a fixed-position toast appears bottom-right: `panelCardBg` background, `danger` border, `danger` text, `AlertTriangle` icon, auto-dismissed after 4 s. `pointerEvents: none` so it never blocks the editor. Implemented in [`src/App.tsx`](../src/App.tsx) as `TranslationErrorToast`.
 
-> **Use for**: any future async field operation that has a loading + failure state. Same three-state (idle / in-flight / error) pattern applies.
+> **Use for**: any future async field operation that has a loading + failure state. Same pattern (idle / in-flight / error / locked) applies.
 
 ---
 

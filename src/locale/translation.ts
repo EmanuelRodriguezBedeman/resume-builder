@@ -127,7 +127,7 @@ export type TranslationCommit = {
  */
 export async function commitTranslation(c: TranslationCommit): Promise<void> {
   const { path, newActiveValue, peerValueAtAttempt, applyTranslation } = c;
-  const { activeLocale, setTranslationHashes, setTranslationPending, setTranslationErrorMsg } =
+  const { activeLocale, translationOverrides, setTranslationHashes, setTranslationPending, setTranslationErrorMsg } =
     useStore.getState();
   const peerLocale: Locale = activeLocale === "en" ? "es" : "en";
 
@@ -136,6 +136,12 @@ export async function commitTranslation(c: TranslationCommit): Promise<void> {
     // field returns to "never been synced" state — avoids a stale flag
     // for legitimately-blank fields.
     setTranslationHashes(path, { en: undefined, es: undefined });
+    return;
+  }
+
+  // Locked field: copy active value verbatim, no DeepL call.
+  if (translationOverrides[path]) {
+    applyTranslation(newActiveValue);
     return;
   }
 
