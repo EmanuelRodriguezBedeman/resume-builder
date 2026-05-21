@@ -10,6 +10,8 @@ export default defineConfig({
     proxy: {
       "/resume": { target: backendTarget, changeOrigin: true },
       "/health": { target: backendTarget, changeOrigin: true },
+      "/translate": { target: backendTarget, changeOrigin: true },
+      "/overrides": { target: backendTarget, changeOrigin: true },
     },
   },
   test: {
