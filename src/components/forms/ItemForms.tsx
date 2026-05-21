@@ -10,7 +10,7 @@ import type {
 import { useStore } from "../../store.ts";
 import { theme } from "../../theme.ts";
 import type { Locale } from "../../save.ts";
-import { tpath } from "../../locale/translation.ts";
+import { tpath, type TranslationPath } from "../../locale/translation.ts";
 import {
   withCategorizedTagsItem,
   withCompactGridItem,
@@ -33,8 +33,10 @@ import {
   LinkListEditor,
   TagListEditor,
   TextField,
+  subtleButtonStyle,
   type TranslationProps,
 } from "./shared.tsx";
+import { Languages } from "lucide-react";
 
 // -- Peer-locale lookup helpers ----------------------------------------
 //
@@ -111,6 +113,62 @@ function Empty({ message }: { message: string }) {
     <p style={{ color: theme.color.panelTextMuted, fontSize: "0.9rem" }}>
       {message}
     </p>
+  );
+}
+
+type LockEntry = {
+  path: TranslationPath;
+  activeValue: string;
+  applyTranslation: (v: string) => void;
+};
+
+// "Lock all / Unlock all" shortcut for a form's non-description Translatable
+// fields. Operates on all entries in one click — individual field locks still
+// work independently via the per-field LockIcon.
+function LockAllButton({ entries }: { entries: LockEntry[] }) {
+  const activeLocale = useStore((s) => s.activeLocale);
+  const translationOverrides = useStore((s) => s.translationOverrides);
+  const setTranslationOverride = useStore((s) => s.setTranslationOverride);
+  const setTranslationHashes = useStore((s) => s.setTranslationHashes);
+
+  if (entries.length === 0) return null;
+
+  const allLocked = entries.every((e) => translationOverrides[e.path]);
+  const peerLocale: Locale = activeLocale === "en" ? "es" : "en";
+
+  const handleClick = () => {
+    if (!allLocked) {
+      for (const { path, activeValue, applyTranslation } of entries) {
+        applyTranslation(activeValue);
+        setTranslationOverride(path, true);
+        setTranslationHashes(path, { en: undefined, es: undefined });
+      }
+    } else {
+      for (const { path } of entries) {
+        setTranslationOverride(path, false);
+        setTranslationHashes(path, { [peerLocale]: "__stale__" });
+      }
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      title={
+        allLocked
+          ? "Unlock all — re-enable auto-translation for all fields"
+          : "Lock all — copy active values to peer locale verbatim"
+      }
+      style={{
+        ...subtleButtonStyle,
+        marginBottom: "1rem",
+        color: allLocked ? theme.color.panelTextMuted : "#22C55E",
+      }}
+    >
+      <Languages size={12} strokeWidth={2.25} />
+      {allLocked ? "Unlock all" : "Lock all"}
+    </button>
   );
 }
 
@@ -195,6 +253,15 @@ function TimelineItemForm({
   return (
     <div>
       <FormHeading title="Experience entry" subtitle={section.title} />
+      <LockAllButton
+        entries={[
+          {
+            path: subtitleTranslation.path,
+            activeValue: item.subtitle,
+            applyTranslation: subtitleTranslation.applyTranslation,
+          },
+        ]}
+      />
       {/* Title = organization name → Shared (proper noun). */}
       <TextField
         label="Title (organization)"
@@ -293,6 +360,15 @@ function CompactGridItemForm({
       <FormHeading
         title="Compact grid entry"
         subtitle={section.title}
+      />
+      <LockAllButton
+        entries={[
+          {
+            path: subtitleTranslation.path,
+            activeValue: item.subtitle ?? "",
+            applyTranslation: subtitleTranslation.applyTranslation,
+          },
+        ]}
       />
       {/* Title = institution name → Shared (proper noun). */}
       <TextField
@@ -409,9 +485,26 @@ function ShowcaseItemForm({
     };
   };
 
+  const lockAllEntries: LockEntry[] = [
+    {
+      path: titleTranslation.path,
+      activeValue: item.title,
+      applyTranslation: titleTranslation.applyTranslation,
+    },
+    ...item.links.map((link) => {
+      const t = labelTranslationFor(link.id);
+      return {
+        path: tpath.showcaseLinkLabel(section.id, itemId, link.id),
+        activeValue: link.label,
+        applyTranslation: t.applyTranslation,
+      };
+    }),
+  ];
+
   return (
     <div>
       <FormHeading title="Project entry" subtitle={section.title} />
+      <LockAllButton entries={lockAllEntries} />
       {/* ShowcaseItem.title is Translatable (project names get localized). */}
       <TextField
         label="Title"
@@ -530,6 +623,15 @@ function CategorizedTagsItemForm({
   return (
     <div>
       <FormHeading title="Tag category" subtitle={section.title} />
+      <LockAllButton
+        entries={[
+          {
+            path: categoryTranslation.path,
+            activeValue: item.category,
+            applyTranslation: categoryTranslation.applyTranslation,
+          },
+        ]}
+      />
       {/* Category name → Translatable (e.g. "Primary" / "Primarias"). */}
       <TextField
         label="Category"
@@ -582,6 +684,15 @@ export function SectionForm({
   return (
     <div>
       <FormHeading title={`Section · ${section.type}`} />
+      <LockAllButton
+        entries={[
+          {
+            path: titleTranslation.path,
+            activeValue: section.title,
+            applyTranslation: titleTranslation.applyTranslation,
+          },
+        ]}
+      />
       <TextField
         label="Title"
         value={section.title}
