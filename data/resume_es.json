@@ -43,13 +43,13 @@
     {
       "id": "experience",
       "type": "timeline",
-      "title": "Experience",
+      "title": "Experiencia",
       "hidden": false,
       "items": [
         {
           "id": "expert-pericial",
           "title": "Expert Pericial",
-          "subtitle": "FOUNDER — HEAD OF IT",
+          "subtitle": "FUNDADOR - JEFE DE INFORMÁTICA",
           "dateRange": {
             "start": "2026-03",
             "end": "2026-06"
@@ -57,14 +57,14 @@
           "description": [
             {
               "type": "paragraph",
-              "text": "Founded and lead the IT department of the startup. Responsible for the design, implementation and scaling of: agentic automations, no-code automations (n8n), web development, data analysis, data engineering, and Bitrix24 CRM integration."
+              "text": "Fundó y lideró el departamento de IT de la startup. Responsable del diseño, implementación y escalado de: automatizaciones agentic, automatizaciones sin código (n8n), desarrollo web, análisis de datos, ingeniería de datos e integración con Bitrix24 CRM."
             }
           ]
         },
         {
           "id": "freelance",
           "title": "Freelance",
-          "subtitle": "DATA SCIENTIST / DATA ENGINEER",
+          "subtitle": "CIENTÍFICO DE DATOS / INGENIERO DE DATOS",
           "dateRange": {
             "start": "2025-09",
             "end": "2026-03"
@@ -72,18 +72,18 @@
           "description": [
             {
               "type": "bullet",
-              "text": "Delivered data science, data engineering and AI solutions for e-commerce and digital businesses: data pipelines, ML models, analytics dashboards, and LLM-powered applications."
+              "text": "Proporcionó soluciones de ciencia de datos, ingeniería de datos e IA para empresas digitales y de comercio electrónico: canalización de datos, modelos de ML, paneles de análisis y aplicaciones impulsadas por LLM."
             },
             {
               "type": "bullet",
-              "text": "Built backend services and data APIs (FastAPI, SQLAlchemy, Pydantic, PostgreSQL) to integrate analytics and AI into client platforms."
+              "text": "Creación de servicios de backend y API de datos (FastAPI, SQLAlchemy, Pydantic, PostgreSQL) para integrar análisis e IA en plataformas de clientes."
             }
           ]
         },
         {
           "id": "adia-health",
           "title": "Adia Health",
-          "subtitle": "DATA SCIENTIST & DATA ANALYST",
+          "subtitle": "CIENTÍFICO Y ANALISTA DE DATOS",
           "dateRange": {
             "start": "2025-03",
             "end": "2025-09"
@@ -91,30 +91,30 @@
           "description": [
             {
               "type": "bullet",
-              "leadIn": "Clinical Data Analysis & Feature Engineering",
-              "text": "Analyze complex patient clinical histories from multiple data sources (Redshift, Athena) to identify relevant biomarkers and clinical patterns, proposing new features for machine learning models to enhance test recommendation accuracy and business model applications."
+              "leadIn": "Análisis de datos clínicos e ingeniería de funciones",
+              "text": "Analizar historias clínicas complejas de pacientes a partir de múltiples fuentes de datos (Redshift, Athena) para identificar biomarcadores y patrones clínicos relevantes, proponiendo nuevas características para que los modelos de aprendizaje automático mejoren la precisión de la recomendación de pruebas y las aplicaciones del modelo de negocio."
             },
             {
               "type": "bullet",
-              "leadIn": "Medical AI Systems Validation",
-              "text": "Leverage clinical expertise to validate and optimize lab test recommendation systems across multiple architectures including rule-based systems, LLMs and Knowledge Graphs ensuring medical accuracy and clinical relevance."
+              "leadIn": "Validación de sistemas de IA médica",
+              "text": "Aprovechar la experiencia clínica para validar y optimizar los sistemas de recomendación de pruebas de laboratorio a través de múltiples arquitecturas, incluidos los sistemas basados en reglas, LLM y Knowledge Graphs, garantizando la precisión médica y la relevancia clínica."
             },
             {
               "type": "bullet",
-              "leadIn": "Prompt engineering",
-              "text": "Generate medical insights, systematically testing various AI systems to extract previously uncaptured patient information including diagnoses, conditions, and syndromes not identified by existing NLP systems."
+              "leadIn": "Ingeniería rápida",
+              "text": "Generar conocimientos médicos, probando sistemáticamente varios sistemas de IA para extraer información del paciente no capturada previamente, incluidos diagnósticos, afecciones y síndromes no identificados por los sistemas de PLN existentes."
             },
             {
               "type": "bullet",
-              "leadIn": "Medical Ontology Implementation",
-              "text": "Apply expertise in medical ontologies to structure healthcare data and drive semantically consistent medical recommendations, ensuring standardized terminology and interoperability across clinical systems."
+              "leadIn": "Aplicación de la ontología médica",
+              "text": "Aplique su experiencia en ontologías médicas para estructurar los datos sanitarios e impulsar recomendaciones médicas semánticamente coherentes, garantizando una terminología normalizada y la interoperabilidad entre sistemas clínicos."
             }
           ]
         },
         {
           "id": "humai",
           "title": "HumAI",
-          "subtitle": "TUTOR IN THE DATA SCIENCE COURSES:",
+          "subtitle": "TUTOR EN LOS CURSOS DE CIENCIA DE DATOS:",
           "dateRange": {
             "start": "2024-06",
             "end": "2025-02"
@@ -122,26 +122,26 @@
           "description": [
             {
               "type": "bullet",
-              "text": "Introduction to programming."
+              "text": "Introducción a la programación."
             },
             {
               "type": "bullet",
-              "text": "Data Analysis."
+              "text": "Análisis de datos."
             },
             {
               "type": "bullet",
-              "text": "Databases."
+              "text": "Bases de datos."
             },
             {
               "type": "bullet",
-              "text": "Advanced Python."
+              "text": "Python avanzado."
             }
           ]
         },
         {
           "id": "lab-salud-publica",
           "title": "Laboratorio de Innovacion Tecnologica en Salud Publica (+Lab)",
-          "subtitle": "DATA SCIENTIST",
+          "subtitle": "CIENTÍFICO DE DATOS",
           "dateRange": {
             "start": "2022-07",
             "end": "2025-03"
@@ -149,25 +149,25 @@
           "description": [
             {
               "type": "bullet",
-              "leadIn": "Project leader",
-              "text": "\"Epidemiological Dashboard of Dengue in the City of Buenos Aires\", a PDE approved by the Buenos Aires Government. The project aims to analyze dengue cases, identifying regional and age-related patterns to inform data-driven policy decisions, optimize resource allocation, and monitor epidemiological outbreaks and compare it with past-outbreaks."
+              "leadIn": "Jefe de proyecto",
+              "text": "\"Cuadro de mando epidemiológico del dengue en la Ciudad de Buenos Aires\", un PDE aprobado por el Gobierno de Buenos Aires. El objetivo del proyecto es analizar los casos de dengue, identificando patrones regionales y etarios para tomar decisiones políticas basadas en datos, optimizar la asignación de recursos, monitorear los brotes epidemiológicos y compararlos con brotes anteriores."
             },
             {
               "type": "bullet",
               "leadIn": "Mentor",
-              "text": "Supervised teams at the Datathon event (in collaboration with MIT) in applying advanced statistical analysis and machine learning techniques to perinatal health challenges."
+              "text": "Supervisión de equipos en el evento Datathon (en colaboración con el MIT) para aplicar técnicas avanzadas de análisis estadístico y aprendizaje automático a los retos de la salud perinatal."
             },
             {
               "type": "bullet",
-              "leadIn": "Data Scientist",
-              "text": "at the \"Analysis of Academic Performance\" project at UBATIC. Utilized exploratory data analysis and developed predictive models. Identified key patterns and factors to inform strategic decisions and enhance student retention"
+              "leadIn": "Científico de datos",
+              "text": "en el proyecto \"Análisis del rendimiento académico\" en UBATIC. Utilizó el análisis exploratorio de datos y desarrolló modelos predictivos. Identificó patrones y factores clave para informar decisiones estratégicas y mejorar la retención de estudiantes."
             }
           ]
         },
         {
           "id": "club-municipal-vilo",
           "title": "Club Municipal de Vicente Lopez (VILO)",
-          "subtitle": "MEDICAL DOCTOR",
+          "subtitle": "MÉDICO",
           "dateRange": {
             "start": "2024-11",
             "end": "2025-03"
@@ -175,14 +175,14 @@
           "description": [
             {
               "type": "bullet",
-              "text": "Physician in charge of medical examinations and first aid."
+              "text": "Médico encargado de los reconocimientos médicos y los primeros auxilios."
             }
           ]
         },
         {
           "id": "racing-club",
           "title": "Racing Club de Avellaneda",
-          "subtitle": "MEDICAL DOCTOR",
+          "subtitle": "MÉDICO",
           "dateRange": {
             "start": "2024-08",
             "end": "2025-04"
@@ -190,14 +190,14 @@
           "description": [
             {
               "type": "bullet",
-              "text": "Team Physician and First Aid Officer for Hockey Players and all individuals within the premises"
+              "text": "Médico del equipo y responsable de primeros auxilios para los jugadores de hockey y todas las personas que se encuentren en las instalaciones"
             }
           ]
         },
         {
           "id": "clinica-metro-del-sur",
           "title": "Clinica Medicina Laboral \"Metro del sur\"",
-          "subtitle": "OCCUPATIONAL HEALTH PHYSICIAN",
+          "subtitle": "MÉDICO DEL TRABAJO",
           "dateRange": {
             "start": "2024-01",
             "end": "2024-03"
@@ -205,14 +205,14 @@
           "description": [
             {
               "type": "bullet",
-              "text": "Occupational Health Physician in charge of medical checking the workers from different companies, pre-employment medical examinations and first aid"
+              "text": "Médico de Salud Laboral encargado de la revisión médica de los trabajadores de distintas empresas, los reconocimientos médicos previos a la contratación y los primeros auxilios."
             }
           ]
         },
         {
           "id": "ceba",
           "title": "Centro de Epilepsia de Buenos Aires (CEBA)",
-          "subtitle": "ELECTROENCEPHALOGRAPHY TECHNICIAN",
+          "subtitle": "TÉCNICO EN ELECTROENCEFALOGRAFÍA",
           "dateRange": {
             "start": "2013-03",
             "end": "2019-04"
@@ -220,7 +220,7 @@
           "description": [
             {
               "type": "paragraph",
-              "text": "Managed a diverse client portfolio, logistics, and equipment maintenance, while administering resources and delivering services to top hospitals, including Hospital Militar Central, Sanatorio Mater Dei, and Fundación Favaloro. Completed internships at Hospital Garrahan and Hospital Británico."
+              "text": "Gestionó una variada cartera de clientes, logística y mantenimiento de equipos, mientras administraba recursos y prestaba servicios a hospitales de primer nivel, como el Hospital Militar Central, el Sanatorio Mater Dei y la Fundación Favaloro. Realizó pasantías en el Hospital Garrahan y en el Hospital Británico."
             }
           ]
         }
@@ -229,13 +229,13 @@
     {
       "id": "education",
       "type": "compactGrid",
-      "title": "Education",
+      "title": "Educación",
       "hidden": false,
       "items": [
         {
           "id": "edvai",
           "title": "Escuela de datos vivos (EDVAI)",
-          "subtitle": "DATA ENGINEERING",
+          "subtitle": "INGENIERÍA DE DATOS",
           "date": {
             "start": "2024-11",
             "end": "2025-01"
@@ -244,7 +244,7 @@
         {
           "id": "uba",
           "title": "Universidad de Buenos Aires (UBA)",
-          "subtitle": "MEDICINE",
+          "subtitle": "MEDICINA",
           "date": {
             "start": "2014",
             "end": "2023"
@@ -253,7 +253,7 @@
         {
           "id": "hospital-britanico",
           "title": "Hospital Británico",
-          "subtitle": "ELECTROENCEPHALOGRAPHY TECHNICIAN",
+          "subtitle": "TÉCNICO EN ELECTROENCEFALOGRAFÍA",
           "date": {
             "start": "2013-03",
             "end": "2013-11"
@@ -264,13 +264,13 @@
     {
       "id": "courses",
       "type": "compactGrid",
-      "title": "Courses",
+      "title": "Cursos",
       "hidden": false,
       "items": [
         {
           "id": "lomas-jr-data-analyst",
           "title": "Universidad de Lomas de Zamora",
-          "subtitle": "JR. DATA ANALYST",
+          "subtitle": "JR. ANALISTA DE DATOS",
           "date": {
             "start": "2023-01",
             "end": "2025-10"
@@ -279,7 +279,7 @@
         {
           "id": "udemy-python3",
           "title": "Udemy",
-          "subtitle": "CURSO MAESTRO DE PYTHON 3",
+          "subtitle": "PYTHON 3 TEACHER COURSE",
           "date": {
             "start": "2015",
             "end": "2023"
@@ -288,7 +288,7 @@
         {
           "id": "udemy-ml",
           "title": "Udemy",
-          "subtitle": "MACHINE LEARNING: DATA SCIENCE IN PYTHON",
+          "subtitle": "APRENDIZAJE AUTOMÁTICO: CIENCIA DE DATOS EN PYTHON",
           "date": {
             "start": "2021-10"
           }
@@ -296,7 +296,7 @@
         {
           "id": "kaggle-ds",
           "title": "Kaggle",
-          "subtitle": "DATA SCIENCE & ANALYTICS IN PYTHON",
+          "subtitle": "CIENCIA Y ANÁLISIS DE DATOS EN PYTHON",
           "date": {
             "start": "2021-12"
           }
@@ -306,12 +306,12 @@
     {
       "id": "skills",
       "type": "categorizedTags",
-      "title": "Skills",
+      "title": "Habilidades",
       "hidden": false,
       "items": [
         {
           "id": "skills-primary",
-          "category": "Primary",
+          "category": "Principal",
           "tags": [
             "Python",
             "Numpy",
@@ -344,7 +344,7 @@
         },
         {
           "id": "skills-secondary",
-          "category": "Secondary",
+          "category": "Secundaria",
           "tags": [
             "R",
             "Node.js",
@@ -356,7 +356,7 @@
         },
         {
           "id": "skills-databases",
-          "category": "Databases",
+          "category": "Bases de datos",
           "tags": [
             "PostgreSQL",
             "MySQL",
@@ -369,30 +369,30 @@
     {
       "id": "languages",
       "type": "compactGrid",
-      "title": "Languages",
+      "title": "Idiomas",
       "hidden": false,
       "items": [
         {
           "id": "english",
           "title": "English",
-          "subtitle": "C1 (ADVANCED)"
+          "subtitle": "C1 (AVANZADO)"
         },
         {
           "id": "spanish",
           "title": "Español",
-          "subtitle": "Native"
+          "subtitle": "Nativo"
         }
       ]
     },
     {
       "id": "projects",
       "type": "showcase",
-      "title": "Projects",
+      "title": "Proyectos",
       "hidden": false,
       "items": [
         {
           "id": "academic-performance",
-          "title": "Academic Performance Analysis & Predictive Model",
+          "title": "Análisis del rendimiento académico y modelo predictivo",
           "techStack": [
             "Python",
             "R",
@@ -403,48 +403,48 @@
           "description": [
             {
               "type": "paragraph",
-              "text": "By applying advanced statistical analysis and machine learning techniques, I uncovered key patterns and factors contributing to university dropout rates. Findings were progressively shared with other academic institutions and stakeholders, enabling them to develop more effective data-informed policies to address this critical challenge."
+              "text": "Aplicando técnicas avanzadas de análisis estadístico y aprendizaje automático, descubrí patrones y factores clave que contribuyen a las tasas de abandono universitario. Los resultados se compartieron progresivamente con otras instituciones académicas y partes interesadas, lo que les permitió desarrollar políticas más eficaces basadas en datos para hacer frente a este desafío crítico."
             }
           ],
           "links": [
             {
               "id": "notebook",
               "icon": "github",
-              "label": "Notebook",
+              "label": "Cuaderno",
               "href": "https://github.com/EmanuelRodriguezBedeman/Academic-Performance/blob/main/Modelos%20Desercion%20univeristaria.ipynb"
             },
             {
               "id": "paper",
               "icon": "link",
-              "label": "Paper",
+              "label": "Papel",
               "href": "https://docs.google.com/document/d/1wBbm4sJ2s0B36Ex7Fd8mPHLq-C8CMvm1/edit"
             }
           ]
         },
         {
           "id": "dengue-dashboard",
-          "title": "Epidemiological Dashboard of Dengue in the City of Buenos Aires",
+          "title": "Tablero Epidemiológico del Dengue en la Ciudad de Buenos Aires",
           "techStack": [
             "Looker Studio"
           ],
           "description": [
             {
               "type": "paragraph",
-              "text": "Innovative dashboard providing a unified and up-to-date view of key epidemiological metrics for Dengue disease in Buenos Aires. Connected to automated data sources, this tool offers dynamic and customizable visualizations, detailed analysis by neighborhoods and age groups, and multi-level drill-down capabilities to identify trends and patterns."
+              "text": "Cuadro de mando innovador que proporciona una visión unificada y actualizada de las métricas epidemiológicas clave de la enfermedad del dengue en Buenos Aires. Conectado a fuentes de datos automatizadas, esta herramienta ofrece visualizaciones dinámicas y personalizables, análisis detallados por barrios y grupos de edad, y capacidades de desglose multinivel para identificar tendencias y patrones."
             }
           ],
           "links": [
             {
               "id": "dashboard",
               "icon": "bar-chart-3",
-              "label": "Dashboard",
+              "label": "Cuadro de mandos",
               "href": "https://datastudio.google.com/u/0/reporting/8245bcc5-960b-426e-b412-fdf36357d58a/page/B9NhD/edit"
             }
           ]
         },
         {
           "id": "argentina-flights",
-          "title": "Argentina Flights – Pipeline & Analysis",
+          "title": "Argentina Vuelos - Pipeline & Análisis",
           "techStack": [
             "Linux",
             "Hadoop",
@@ -458,21 +458,21 @@
           "description": [
             {
               "type": "paragraph",
-              "text": "Designed and automated a data pipeline to analyze Argentina's flight trends (2021-2022), providing insights into aircraft usage, passenger traffic, and flight activity. Developed a cloud migration strategy for Google Cloud Platform (GCP) to enhance performance, scalability, and cost-effectiveness."
+              "text": "Diseñó y automatizó una canalización de datos para analizar las tendencias de vuelo de Argentina (2021-2022), proporcionando información sobre el uso de aeronaves, el tráfico de pasajeros y la actividad de vuelo. Desarrollo de una estrategia de migración a la nube para Google Cloud Platform (GCP) con el fin de mejorar el rendimiento, la escalabilidad y la rentabilidad."
             }
           ],
           "links": [
             {
               "id": "repo",
               "icon": "github",
-              "label": "Repository",
+              "label": "Repositorio",
               "href": "https://github.com/EmanuelRodriguezBedeman/Data-Engineering-EDVAI/tree/main/Examen%20Final/Ejercicio%201"
             }
           ]
         },
         {
           "id": "car-rentals",
-          "title": "Car Rentals - Pipeline & Analysis",
+          "title": "Alquiler de coches - Pipeline y análisis",
           "techStack": [
             "Linux",
             "Hadoop",
@@ -486,35 +486,35 @@
           "description": [
             {
               "type": "paragraph",
-              "text": "Developed an automated pipeline to generate insights for car rental dashboards, exploring relationships between fuel types, vehicle characteristics, and rental frequencies. Designed a cloud migration strategy for Google Cloud Platform (GCP) to optimize performance, scalability, and infrastructure costs."
+              "text": "Desarrollo de un proceso automatizado para generar información para los cuadros de mando de alquiler de coches, explorando las relaciones entre los tipos de combustible, las características de los vehículos y las frecuencias de alquiler. Diseño de una estrategia de migración a la nube para Google Cloud Platform (GCP) con el fin de optimizar el rendimiento, la escalabilidad y los costes de infraestructura."
             }
           ],
           "links": [
             {
               "id": "repo",
               "icon": "github",
-              "label": "Repository",
+              "label": "Repositorio",
               "href": "https://github.com/EmanuelRodriguezBedeman/Data-Engineering-EDVAI/tree/main/Examen%20Final/Ejercicio%202"
             }
           ]
         },
         {
           "id": "nyc-flights",
-          "title": "New York City Flights",
+          "title": "Vuelos a Nueva York",
           "techStack": [
             "R"
           ],
           "description": [
             {
               "type": "paragraph",
-              "text": "This data analysis aims to identify the airline with the shortest delay times (both arrival and departure) and the highest frequency of use in New York City, providing insights into the most punctual and frequently used airline."
+              "text": "Este análisis de datos pretende identificar la aerolínea con los tiempos de retraso más cortos (tanto a la llegada como a la salida) y la mayor frecuencia de uso en la ciudad de Nueva York, proporcionando información sobre la aerolínea más puntual y frecuentemente utilizada."
             }
           ],
           "links": [
             {
               "id": "repo",
               "icon": "github",
-              "label": "Repository",
+              "label": "Repositorio",
               "href": "https://github.com/EmanuelRodriguezBedeman/R/tree/main/Data%20Analysis%20flights%20of%20New%20York%20(R)/English"
             }
           ]
