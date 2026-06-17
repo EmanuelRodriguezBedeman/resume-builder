@@ -12,6 +12,7 @@ export default defineConfig({
       "/health": { target: backendTarget, changeOrigin: true },
       "/translate": { target: backendTarget, changeOrigin: true },
       "/overrides": { target: backendTarget, changeOrigin: true },
+      "/docx": { target: backendTarget, changeOrigin: true },
     },
   },
   test: {

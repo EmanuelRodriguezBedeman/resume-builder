@@ -2,10 +2,13 @@ import { Hono } from "hono";
 import { serveStatic } from "@hono/node-server/serve-static";
 import {
   readBothLocales,
+  readResume,
   writeLocale,
   type Locale,
   type Resume,
 } from "./storage.ts";
+import type { Resume as ResumeData } from "../src/types.ts";
+import { buildResumeDocx } from "./docx.ts";
 import {
   MissingDeepLKeyError,
   translateText,
@@ -112,6 +115,35 @@ export function createApp(dataDir: string) {
       }
       console.error("[server] DeepL translation failed:", err);
       return c.json({ error: "translation_failed" }, 503);
+    }
+  });
+
+  app.post("/docx", async (c) => {
+    let body: { locale?: unknown };
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json({ error: "invalid_json" }, 400);
+    }
+    if (!isLocale(body.locale)) {
+      return c.json({ error: "invalid_locale" }, 400);
+    }
+    try {
+      // storage.Resume is intentionally loose (unknown[] items/sections); the
+      // on-disk JSON conforms to the full src/types.ts schema the builder needs.
+      const resume = (await readResume(dataDir, body.locale)) as ResumeData;
+      const buffer = await buildResumeDocx(resume, body.locale);
+      return new Response(buffer, {
+        status: 200,
+        headers: {
+          "Content-Type":
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "Content-Disposition": `attachment; filename="resume_${body.locale}.docx"`,
+        },
+      });
+    } catch (err) {
+      console.error("[server] buildResumeDocx failed:", err);
+      return c.json({ error: "docx_failed" }, 500);
     }
   });
 

@@ -70,6 +70,14 @@ export async function readBothLocales(dir: string): Promise<LocalesBundle> {
   return { en, es };
 }
 
+// Read a single locale. Delegates to readBothLocales so the ES-bootstrap
+// path stays in one place — callers asking for one locale still get a fully
+// materialized resume (cloned/translated from EN if resume_es.json is absent).
+export async function readResume(dir: string, locale: Locale): Promise<Resume> {
+  const locales = await readBothLocales(dir);
+  return locales[locale];
+}
+
 export async function writeLocale(
   dir: string,
   locale: Locale,
