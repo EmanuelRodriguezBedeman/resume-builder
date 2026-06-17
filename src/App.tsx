@@ -2,11 +2,20 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { pdf } from "@react-pdf/renderer";
 import JSZip from "jszip";
 import { zipSync } from "fflate";
-import { AlertTriangle, Download, FileDown, FileText, Loader2 } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Download,
+  FileDown,
+  FileText,
+  Loader2,
+  Sparkles,
+} from "lucide-react";
 import { Resume } from "./pdf/Resume.tsx";
 import { HtmlPreview } from "./preview/HtmlPreview.tsx";
 import { FormPanel } from "./components/FormPanel.tsx";
 import { Sidebar } from "./components/Sidebar.tsx";
+import { JdPanel } from "./jd/JdPanel.tsx";
 import { useStore, type LocalesBundle } from "./store.ts";
 import { theme } from "./theme.ts";
 import type { Locale } from "./save.ts";
@@ -73,6 +82,24 @@ const toolbarRightStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   gap: "0.75rem",
+};
+
+// Secondary toolbar action (Resume by JD / ← Editor). Translucent glass on
+// the toolbar gradient — same treatment as the locale toggle. The Export
+// gradient is reserved for the one primary action per view (design-system §9).
+const toolbarButtonStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "0.4rem",
+  padding: "0.45rem 0.85rem",
+  borderRadius: theme.radius.pill,
+  background: "rgba(255, 255, 255, 0.08)",
+  border: "1px solid rgba(255, 255, 255, 0.20)",
+  color: theme.color.toolbarText,
+  fontFamily: theme.font.family,
+  fontWeight: 600,
+  fontSize: "0.78rem",
+  cursor: "pointer",
 };
 
 const localeToggleStyle: CSSProperties = {
@@ -443,6 +470,8 @@ function LocaleToggle() {
   );
 }
 
+type View = "editor" | "jd";
+
 function LoadedApp({
   resume,
   locales,
@@ -453,6 +482,8 @@ function LoadedApp({
   // HtmlPreview self-subscribes to the store, so it doesn't receive
   // `resume` here. The PDF documents are only realized on Export click,
   // so this component just hands `locales` to the Export button.
+  const [view, setView] = useState<View>("editor");
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
       <TranslationErrorToast />
@@ -469,26 +500,54 @@ function LoadedApp({
           </span>
         </span>
         <div style={toolbarRightStyle}>
-          <LocaleToggle />
-          <ScoreChips />
-          <DocxExportButton />
-          <ExportButton locales={locales} />
+          {view === "editor" ? (
+            <>
+              <button
+                type="button"
+                style={toolbarButtonStyle}
+                onClick={() => setView("jd")}
+                title="Generate a CV tailored to a job description"
+              >
+                <Sparkles size={14} strokeWidth={2.5} />
+                Resume by JD
+              </button>
+              <LocaleToggle />
+              <ScoreChips />
+              <DocxExportButton />
+              <ExportButton locales={locales} />
+            </>
+          ) : (
+            <button
+              type="button"
+              style={toolbarButtonStyle}
+              onClick={() => setView("editor")}
+            >
+              <ArrowLeft size={14} strokeWidth={2.5} />
+              Editor
+            </button>
+          )}
         </div>
       </div>
-      <div
-        style={{
-          flex: 1,
-          minHeight: 0,
-          display: "flex",
-          flexDirection: "row",
-        }}
-      >
-        <Sidebar resume={resume} />
-        <FormPanel resume={resume} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <HtmlPreview />
+      {view === "jd" ? (
+        <div style={{ flex: 1, minHeight: 0 }}>
+          <JdPanel />
         </div>
-      </div>
+      ) : (
+        <div
+          style={{
+            flex: 1,
+            minHeight: 0,
+            display: "flex",
+            flexDirection: "row",
+          }}
+        >
+          <Sidebar resume={resume} />
+          <FormPanel resume={resume} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <HtmlPreview />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
