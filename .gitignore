@@ -19,6 +19,9 @@ desktop.ini
 # Per-field translation overrides (local user preference, not shared)
 data/translation-overrides.json
 
+# Resume-by-JD generation output (local, regenerated on demand)
+data/jd/
+
 # Logs / temp
 *.log
 *.tmp

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createApp } from "./app.ts";
@@ -232,6 +232,147 @@ describe("POST /translate", () => {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: "{not json",
+    });
+    expect(res.status).toBe(400);
+  });
+});
+
+describe("GET /jd/provider-status", () => {
+  let dir: string;
+  let app: ReturnType<typeof createApp>;
+
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), "resume-builder-jd-"));
+    app = createApp(dir);
+  });
+
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+    vi.unstubAllEnvs();
+  });
+
+  test("returns unconfigured when AI_PROVIDER_API_KEY is absent", async () => {
+    vi.stubEnv("AI_PROVIDER_API_KEY", "");
+    const res = await app.request("/jd/provider-status");
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ configured: false, provider: null });
+  });
+
+  test("returns gemini when an AIza... key is present", async () => {
+    vi.stubEnv("AI_PROVIDER_API_KEY", "AIzaSyExampleKey1234567890");
+    const res = await app.request("/jd/provider-status");
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ configured: true, provider: "gemini" });
+  });
+});
+
+describe("POST /jd/generate", () => {
+  let dir: string;
+  let app: ReturnType<typeof createApp>;
+
+  const TAILORED: Resume = {
+    schemaVersion: 1,
+    header: { name: "Ada Lovelace", items: [] },
+    sections: [
+      { id: "exp", title: "Experience", hidden: false, type: "timeline", items: [] },
+    ],
+  };
+
+  function mockGemini(envelope: unknown) {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              candidates: [
+                { content: { parts: [{ text: JSON.stringify(envelope) }] } },
+              ],
+            }),
+            { status: 200, headers: { "content-type": "application/json" } },
+          ),
+      ),
+    );
+  }
+
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), "resume-builder-jd-gen-"));
+    app = createApp(dir);
+    // Keep the EN-read bootstrap deterministic (clone, no DeepL).
+    vi.stubEnv("DEEPL_API_KEY", "");
+  });
+
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  test("returns the resume + locale and persists data/jd/resume.json", async () => {
+    vi.stubEnv("AI_PROVIDER_API_KEY", "AIzaTestKey123");
+    mockGemini({ locale: "en", resume: TAILORED });
+
+    const res = await app.request("/jd/generate", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ jd: "Lead engineer wanted", locale: "en" }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ resume: TAILORED, locale: "en" });
+
+    const persisted = JSON.parse(
+      await readFile(join(dir, "jd", "resume.json"), "utf-8"),
+    );
+    expect(persisted).toEqual(TAILORED);
+  });
+
+  test("returns 503 when the AI provider is unconfigured", async () => {
+    vi.stubEnv("AI_PROVIDER_API_KEY", "");
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const res = await app.request("/jd/generate", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ jd: "Lead engineer wanted" }),
+    });
+
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ error: "provider_unconfigured" });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  test("returns 422 when the AI response fails schema validation", async () => {
+    vi.stubEnv("AI_PROVIDER_API_KEY", "AIzaTestKey123");
+    mockGemini({ locale: "en", resume: { nope: true } });
+
+    const res = await app.request("/jd/generate", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ jd: "Lead engineer wanted", locale: "en" }),
+    });
+
+    expect(res.status).toBe(422);
+    expect(await res.json()).toEqual({ error: "invalid_ai_response" });
+  });
+
+  test("returns 400 when jd is missing", async () => {
+    vi.stubEnv("AI_PROVIDER_API_KEY", "AIzaTestKey123");
+    const res = await app.request("/jd/generate", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ locale: "en" }),
+    });
+    expect(res.status).toBe(400);
+  });
+
+  test("returns 400 when locale is present but invalid", async () => {
+    vi.stubEnv("AI_PROVIDER_API_KEY", "AIzaTestKey123");
+    const res = await app.request("/jd/generate", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ jd: "x", locale: "fr" }),
     });
     expect(res.status).toBe(400);
   });

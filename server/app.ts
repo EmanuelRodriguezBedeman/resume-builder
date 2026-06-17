@@ -3,6 +3,7 @@ import { serveStatic } from "@hono/node-server/serve-static";
 import {
   readBothLocales,
   readResume,
+  writeJdResume,
   writeLocale,
   type Locale,
   type Resume,
@@ -14,6 +15,13 @@ import {
   translateText,
 } from "./translate.ts";
 import { readOverrides, writeOverride } from "./overrides.ts";
+import { getProvider } from "./jd/provider.ts";
+import {
+  AiRequestError,
+  generateTailoredResume,
+  InvalidAiResponseError,
+  ProviderUnconfiguredError,
+} from "./jd/generate.ts";
 
 const ENVELOPE_SCHEMA_VERSION = 1;
 
@@ -25,6 +33,60 @@ export function createApp(dataDir: string) {
   const app = new Hono();
 
   app.get("/health", (c) => c.json({ ok: true }));
+
+  // Health check for the Resume by JD feature: lets the frontend know whether
+  // an AI provider is configured before showing the generation UI (see
+  // docs/adr/0005-jd-ai-provider.md). No generation logic yet.
+  app.get("/jd/provider-status", (c) => {
+    const provider = getProvider();
+    return c.json({
+      configured: provider !== null,
+      provider: provider?.type ?? null,
+    });
+  });
+
+  // Tailor the resume to a job description via the configured AI provider and
+  // persist the result to data/jd/resume.json. The EN locale is the source of
+  // structure and Shared fields; output locale is the caller's choice or, when
+  // omitted, auto-detected by the AI from the JD.
+  app.post("/jd/generate", async (c) => {
+    let body: { jd?: unknown; locale?: unknown };
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json({ error: "invalid_json" }, 400);
+    }
+    if (typeof body.jd !== "string" || !body.jd.trim()) {
+      return c.json({ error: "missing_jd" }, 400);
+    }
+    if (body.locale !== undefined && !isLocale(body.locale)) {
+      return c.json({ error: "invalid_locale" }, 400);
+    }
+
+    try {
+      const resumeEn = (await readResume(dataDir, "en")) as ResumeData;
+      const result = await generateTailoredResume(
+        resumeEn,
+        body.jd,
+        body.locale,
+      );
+      await writeJdResume(dataDir, result.resume);
+      return c.json({ resume: result.resume, locale: result.locale });
+    } catch (err) {
+      if (err instanceof ProviderUnconfiguredError) {
+        return c.json({ error: "provider_unconfigured" }, 503);
+      }
+      if (err instanceof InvalidAiResponseError) {
+        return c.json({ error: "invalid_ai_response" }, 422);
+      }
+      if (err instanceof AiRequestError) {
+        console.error("[server] /jd/generate AI request failed:", err);
+        return c.json({ error: "ai_request_failed" }, 502);
+      }
+      console.error("[server] /jd/generate failed:", err);
+      return c.json({ error: "generate_failed" }, 500);
+    }
+  });
 
   app.get("/resume", async (c) => {
     try {

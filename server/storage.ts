@@ -85,3 +85,9 @@ export async function writeLocale(
 ): Promise<void> {
   await writeJsonAtomic(localeFile(dir, locale), resume);
 }
+
+// Persists the latest Resume-by-JD generation to data/jd/resume.json,
+// overwriting any previous result. writeJsonAtomic creates the jd/ dir.
+export async function writeJdResume(dir: string, resume: Resume): Promise<void> {
+  await writeJsonAtomic(join(dir, "jd", "resume.json"), resume);
+}

@@ -13,6 +13,7 @@ export default defineConfig({
       "/translate": { target: backendTarget, changeOrigin: true },
       "/overrides": { target: backendTarget, changeOrigin: true },
       "/docx": { target: backendTarget, changeOrigin: true },
+      "/jd": { target: backendTarget, changeOrigin: true },
     },
   },
   test: {
