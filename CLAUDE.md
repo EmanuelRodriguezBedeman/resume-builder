@@ -17,3 +17,8 @@ Canonical labels (defaults): `needs-triage`, `needs-info`, `ready-for-agent`, `r
 ### Domain docs
 
 Single-context layout: `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+
+
+### .env files
+
+You cannot read or modify .env vars. If something must be modified, it must be indicated to the user to implement the change.
