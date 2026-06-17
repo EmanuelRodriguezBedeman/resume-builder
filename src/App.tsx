@@ -1,7 +1,8 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { pdf } from "@react-pdf/renderer";
 import JSZip from "jszip";
-import { AlertTriangle, Download, FileText } from "lucide-react";
+import { zipSync } from "fflate";
+import { AlertTriangle, Download, FileDown, FileText, Loader2 } from "lucide-react";
 import { Resume } from "./pdf/Resume.tsx";
 import { HtmlPreview } from "./preview/HtmlPreview.tsx";
 import { FormPanel } from "./components/FormPanel.tsx";
@@ -106,6 +107,33 @@ const localeButtonActiveStyle: CSSProperties = {
   boxShadow: "0 1px 0 rgba(0, 0, 0, 0.25)",
 };
 
+// Score chips are *informative*, not actionable — so they deliberately avoid
+// the Export gradient (reserved for primary actions). Same translucent-glass
+// treatment as the locale toggle, with the number tinted by its score tier.
+const scoreChipStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "0.35rem",
+  padding: "0.32rem 0.6rem",
+  borderRadius: theme.radius.sm,
+  background: "rgba(255, 255, 255, 0.08)",
+  border: "1px solid rgba(255, 255, 255, 0.20)",
+  fontFamily: theme.font.family,
+  fontSize: "0.72rem",
+  fontWeight: 700,
+  letterSpacing: "0.6px",
+  lineHeight: 1,
+};
+
+const scoreChipLabelStyle: CSSProperties = {
+  color: "rgba(255, 255, 255, 0.65)",
+  textTransform: "uppercase",
+};
+
+// ≥80 green (on/healthy), 60–79 amber (warn), <60 rose (danger token).
+const scoreColor = (n: number): string =>
+  n >= 80 ? "#22C55E" : n >= 60 ? "#F59E0B" : theme.color.danger;
+
 const gradientButtonStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
@@ -203,6 +231,100 @@ async function buildZip(locales: LocalesBundle): Promise<Blob> {
   return zip.generateAsync({ type: "blob" });
 }
 
+// Inline rotating spinner for button loading states. Mirrors the
+// requestAnimationFrame approach in components/forms/shared.tsx so the UI
+// stays CSS-file-free (everything is inline styles).
+function ButtonSpinner() {
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    let frameId: number;
+    let startTs: number | null = null;
+    const tick = (ts: number) => {
+      if (startTs === null) startTs = ts;
+      const deg = (((ts - startTs) / 1000) * 360) % 360;
+      if (ref.current) ref.current.style.transform = `rotate(${deg}deg)`;
+      frameId = requestAnimationFrame(tick);
+    };
+    frameId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frameId);
+  }, []);
+  return (
+    <span ref={ref} style={{ display: "inline-flex" }}>
+      <Loader2 size={14} strokeWidth={2.5} />
+    </span>
+  );
+}
+
+// Exports both locales as ATS-optimized .docx files (server-rendered via
+// POST /docx) zipped together client-side with fflate. The server reads
+// resume data from disk, so this button needs no locale payload.
+function DocxExportButton() {
+  const [status, setStatus] = useState<"idle" | "generating">("idle");
+  const setTranslationErrorMsg = useStore((s) => s.setTranslationErrorMsg);
+
+  const onClick = async () => {
+    if (status === "generating") return;
+    setStatus("generating");
+    try {
+      const [enRes, esRes] = await Promise.all([
+        fetch("/docx", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ locale: "en" }),
+        }),
+        fetch("/docx", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ locale: "es" }),
+        }),
+      ]);
+      if (!enRes.ok || !esRes.ok) {
+        throw new Error(`docx request failed (${enRes.status}/${esRes.status})`);
+      }
+      const [enBuf, esBuf] = await Promise.all([
+        enRes.arrayBuffer(),
+        esRes.arrayBuffer(),
+      ]);
+      const zipped = zipSync({
+        "resume_en.docx": new Uint8Array(enBuf),
+        "resume_es.docx": new Uint8Array(esBuf),
+      });
+      const blob = new Blob([zipped], { type: "application/zip" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "resume.zip";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("DOCX export failed:", err);
+      setTranslationErrorMsg("DOCX export failed. Please try again.");
+    } finally {
+      setStatus("idle");
+    }
+  };
+
+  const generating = status === "generating";
+  return (
+    <button
+      type="button"
+      onClick={() => void onClick()}
+      disabled={generating}
+      title="Download both English and Spanish as DOCX"
+      style={{
+        ...gradientButtonStyle,
+        opacity: generating ? 0.7 : 1,
+        cursor: generating ? "wait" : "pointer",
+      }}
+    >
+      {generating ? <ButtonSpinner /> : <FileDown size={14} strokeWidth={2.5} />}
+      {generating ? "Exporting…" : "Export DOCX"}
+    </button>
+  );
+}
+
 function ExportButton({ locales }: { locales: LocalesBundle }) {
   const [status, setStatus] = useState<"idle" | "generating" | "error">("idle");
 
@@ -271,6 +393,32 @@ function TranslationErrorToast() {
   );
 }
 
+// Live résumé-quality scores, one chip per locale (e.g. "EN 82 · ES 75").
+// Subscribes to the store's `scores`, which every resume mutation recomputes
+// synchronously — so the numbers track edits in real time, no button needed.
+function ScoreChips() {
+  const scores = useStore((s) => s.scores);
+  const entries: Locale[] = ["en", "es"];
+  return (
+    <div
+      style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
+      role="group"
+      aria-label="Resume quality scores"
+    >
+      {entries.map((loc) => (
+        <span
+          key={loc}
+          style={scoreChipStyle}
+          title={`${loc.toUpperCase()} resume quality: ${scores[loc]}/100`}
+        >
+          <span style={scoreChipLabelStyle}>{loc}</span>
+          <span style={{ color: scoreColor(scores[loc]) }}>{scores[loc]}</span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function LocaleToggle() {
   const activeLocale = useStore((s) => s.activeLocale);
   const setActiveLocale = useStore((s) => s.setActiveLocale);
@@ -322,6 +470,8 @@ function LoadedApp({
         </span>
         <div style={toolbarRightStyle}>
           <LocaleToggle />
+          <ScoreChips />
+          <DocxExportButton />
           <ExportButton locales={locales} />
         </div>
       </div>

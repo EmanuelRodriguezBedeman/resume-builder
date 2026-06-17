@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { createDebouncedSaver, postResume, type Locale } from "./save.ts";
+import { scoreResume } from "./locale/score.ts";
 import type {
   FieldHash,
   TranslationHashes,
@@ -27,6 +28,16 @@ export type HoveredTarget =
 
 export type LocalesBundle = { en: Resume; es: Resume };
 
+// Per-locale résumé-quality scores (0–100), derived from the loaded bundle.
+// scoreResume is pure and synchronous, so we recompute both on every resume
+// mutation rather than memoizing or debouncing.
+export type Scores = { en: number; es: number };
+
+const computeScores = (locales: LocalesBundle): Scores => ({
+  en: scoreResume(locales.en, "en"),
+  es: scoreResume(locales.es, "es"),
+});
+
 type ResumeState =
   | { status: "loading" }
   | { status: "loaded"; locales: LocalesBundle }
@@ -34,6 +45,9 @@ type ResumeState =
 
 type Store = {
   state: ResumeState;
+  // Live per-locale quality scores, kept in sync with `state` by every
+  // resume mutation. {en: 0, es: 0} until the first load completes.
+  scores: Scores;
   activeLocale: Locale;
   selection: Selection;
   expandedSections: Set<string>;
@@ -146,6 +160,7 @@ export const selectActiveResume = (s: Store): Resume | null =>
 
 export const useStore = create<Store>((set) => ({
   state: { status: "loading" },
+  scores: { en: 0, es: 0 },
   activeLocale: "en",
   selection: { kind: "none" },
   expandedSections: new Set<string>(),
@@ -162,6 +177,7 @@ export const useStore = create<Store>((set) => ({
   setLoaded: (locales) =>
     set((prev) => ({
       state: { status: "loaded", locales },
+      scores: computeScores(locales),
       // Expansion is driven by section IDs in the active locale. IDs are
       // shared across locales (Slice 3 makes that invariant explicit), so
       // either side gives the same set.
@@ -177,11 +193,10 @@ export const useStore = create<Store>((set) => ({
       const locale = prev.activeLocale;
       const nextResume = producer(prev.state.locales[locale]);
       void debouncedSaveByLocale[locale](nextResume);
+      const locales = { ...prev.state.locales, [locale]: nextResume };
       return {
-        state: {
-          status: "loaded",
-          locales: { ...prev.state.locales, [locale]: nextResume },
-        },
+        state: { status: "loaded", locales },
+        scores: computeScores(locales),
       };
     }),
 
@@ -195,11 +210,10 @@ export const useStore = create<Store>((set) => ({
       const nextEs = producer(prev.state.locales.es);
       void debouncedSaveByLocale.en(nextEn);
       void debouncedSaveByLocale.es(nextEs);
+      const locales = { en: nextEn, es: nextEs };
       return {
-        state: {
-          status: "loaded",
-          locales: { en: nextEn, es: nextEs },
-        },
+        state: { status: "loaded", locales },
+        scores: computeScores(locales),
       };
     }),
 
@@ -208,11 +222,10 @@ export const useStore = create<Store>((set) => ({
       if (prev.state.status !== "loaded") return prev;
       const nextResume = producer(prev.state.locales[locale]);
       void debouncedSaveByLocale[locale](nextResume);
+      const locales = { ...prev.state.locales, [locale]: nextResume };
       return {
-        state: {
-          status: "loaded",
-          locales: { ...prev.state.locales, [locale]: nextResume },
-        },
+        state: { status: "loaded", locales },
+        scores: computeScores(locales),
       };
     }),
 

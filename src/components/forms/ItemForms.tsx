@@ -471,7 +471,7 @@ function ShowcaseItemForm({
 
   const labelTranslationFor = (
     linkId: string,
-  ): TranslationProps | undefined => {
+  ): TranslationProps => {
     const peerLink = peerItem?.links.find((l) => l.id === linkId);
     return {
       path: tpath.showcaseLinkLabel(section.id, itemId, linkId),
