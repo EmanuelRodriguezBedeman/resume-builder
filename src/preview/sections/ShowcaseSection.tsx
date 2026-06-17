@@ -5,6 +5,7 @@ import { DescriptionBlocks } from "../DescriptionBlocks.tsx";
 import { SectionHeading } from "../SectionHeading.tsx";
 import { Icon } from "../icons.tsx";
 import { previewHoverStyle } from "../hoverHighlight.ts";
+import { sectionById, usePreviewSource } from "../previewSource.tsx";
 
 const MUTED = "#555";
 
@@ -71,12 +72,13 @@ export const ShowcaseSection = memo(function ShowcaseSection({
 }: {
   sectionId: string;
 }) {
-  const title = useStore((s) => {
+  const override = usePreviewSource();
+  const storeTitle = useStore((s) => {
     if (s.state.status !== "loaded") return "";
     const section = s.state.locales[s.activeLocale].sections.find((sec) => sec.id === sectionId);
     return section?.title ?? "";
   });
-  const itemIds = useStore(
+  const storeItemIds = useStore(
     useShallow((s) => {
       if (s.state.status !== "loaded") return [];
       const section = s.state.locales[s.activeLocale].sections.find(
@@ -95,11 +97,18 @@ export const ShowcaseSection = memo(function ShowcaseSection({
   );
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (isSelected && ref.current) {
+    if (!override && isSelected && ref.current) {
       ref.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
-  }, [isSelected]);
-  const highlighted = isHovered || isSelected;
+  }, [isSelected, override]);
+  const section = override ? sectionById(override.resume, sectionId) : undefined;
+  const title = override ? section?.title ?? "" : storeTitle;
+  const itemIds = override
+    ? section?.type === "showcase"
+      ? section.items.map((i) => i.id)
+      : []
+    : storeItemIds;
+  const highlighted = !override && (isHovered || isSelected);
   return (
     <div
       ref={ref}
@@ -120,7 +129,8 @@ const ShowcaseItem = memo(function ShowcaseItem({
   sectionId: string;
   itemId: string;
 }) {
-  const item = useStore((s) => {
+  const override = usePreviewSource();
+  const storeItem = useStore((s) => {
     if (s.state.status !== "loaded") return null;
     const section = s.state.locales[s.activeLocale].sections.find((sec) => sec.id === sectionId);
     if (!section || section.type !== "showcase") return null;
@@ -140,12 +150,20 @@ const ShowcaseItem = memo(function ShowcaseItem({
   );
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (isSelected && ref.current) {
+    if (!override && isSelected && ref.current) {
       ref.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
-  }, [isSelected]);
+  }, [isSelected, override]);
+  let item = storeItem;
+  if (override) {
+    const section = sectionById(override.resume, sectionId);
+    item =
+      section?.type === "showcase"
+        ? section.items.find((i) => i.id === itemId) ?? null
+        : null;
+  }
   if (!item) return null;
-  const highlighted = isHovered || isSelected;
+  const highlighted = !override && (isHovered || isSelected);
   return (
     <div
       ref={ref}

@@ -3,6 +3,7 @@ import type { HeaderItem } from "../types.ts";
 import { useStore } from "../store.ts";
 import { Icon } from "./icons.tsx";
 import { previewHoverStyle } from "./hoverHighlight.ts";
+import { usePreviewSource } from "./previewSource.tsx";
 
 const ICON_SIZE = 13;
 const FONT_SIZE_PT = 9;
@@ -80,23 +81,26 @@ function HeaderItemView({ item }: { item: HeaderItem }) {
 // Self-subscribed to resume.header. Re-renders only when the header
 // object reference changes (i.e. any header field was edited).
 export const Header = memo(function Header() {
-  const header = useStore((s) =>
+  const override = usePreviewSource();
+  const storeHeader = useStore((s) =>
     s.state.status === "loaded"
       ? s.state.locales[s.activeLocale].header
       : null,
   );
+  const header = override ? override.resume.header : storeHeader;
   const isHovered = useStore((s) => s.hovered.kind === "header");
   const isSelected = useStore((s) => s.selection.kind === "header");
   const ref = useRef<HTMLDivElement>(null);
-  // Scroll into view on every transition into the selected state.
+  // Scroll into view on every transition into the selected state. Disabled in
+  // read-only override mode (the JD preview never has a selection).
   useEffect(() => {
-    if (isSelected && ref.current) {
+    if (!override && isSelected && ref.current) {
       ref.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
-  }, [isSelected]);
+  }, [isSelected, override]);
   if (!header) return null;
   const rows = chunk(header.items, ITEMS_PER_ROW);
-  const highlighted = isHovered || isSelected;
+  const highlighted = !override && (isHovered || isSelected);
   return (
     <div
       ref={ref}

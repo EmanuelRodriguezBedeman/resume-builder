@@ -3,6 +3,7 @@ import { useShallow } from "zustand/react/shallow";
 import { useStore } from "../../store.ts";
 import { SectionHeading } from "../SectionHeading.tsx";
 import { previewHoverStyle } from "../hoverHighlight.ts";
+import { sectionById, usePreviewSource } from "../previewSource.tsx";
 import { formatFlexibleDate } from "../../pdf/format.ts";
 
 const DATE_COLOR = "#555";
@@ -60,12 +61,13 @@ export const CompactGridSection = memo(function CompactGridSection({
 }: {
   sectionId: string;
 }) {
-  const title = useStore((s) => {
+  const override = usePreviewSource();
+  const storeTitle = useStore((s) => {
     if (s.state.status !== "loaded") return "";
     const section = s.state.locales[s.activeLocale].sections.find((sec) => sec.id === sectionId);
     return section?.title ?? "";
   });
-  const itemIds = useStore(
+  const storeItemIds = useStore(
     useShallow((s) => {
       if (s.state.status !== "loaded") return [];
       const section = s.state.locales[s.activeLocale].sections.find(
@@ -84,11 +86,18 @@ export const CompactGridSection = memo(function CompactGridSection({
   );
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (isSelected && ref.current) {
+    if (!override && isSelected && ref.current) {
       ref.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
-  }, [isSelected]);
-  const highlighted = isHovered || isSelected;
+  }, [isSelected, override]);
+  const section = override ? sectionById(override.resume, sectionId) : undefined;
+  const title = override ? section?.title ?? "" : storeTitle;
+  const itemIds = override
+    ? section?.type === "compactGrid"
+      ? section.items.map((i) => i.id)
+      : []
+    : storeItemIds;
+  const highlighted = !override && (isHovered || isSelected);
   return (
     <div
       ref={ref}
@@ -111,13 +120,14 @@ const CompactGridItem = memo(function CompactGridItem({
   sectionId: string;
   itemId: string;
 }) {
-  const item = useStore((s) => {
+  const override = usePreviewSource();
+  const storeItem = useStore((s) => {
     if (s.state.status !== "loaded") return null;
     const section = s.state.locales[s.activeLocale].sections.find((sec) => sec.id === sectionId);
     if (!section || section.type !== "compactGrid") return null;
     return section.items.find((i) => i.id === itemId) ?? null;
   });
-  const locale = useStore((s) => s.activeLocale);
+  const storeLocale = useStore((s) => s.activeLocale);
   const isHovered = useStore(
     (s) =>
       s.hovered.kind === "item" &&
@@ -132,12 +142,21 @@ const CompactGridItem = memo(function CompactGridItem({
   );
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (isSelected && ref.current) {
+    if (!override && isSelected && ref.current) {
       ref.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
-  }, [isSelected]);
+  }, [isSelected, override]);
+  const locale = override ? override.locale : storeLocale;
+  let item = storeItem;
+  if (override) {
+    const section = sectionById(override.resume, sectionId);
+    item =
+      section?.type === "compactGrid"
+        ? section.items.find((i) => i.id === itemId) ?? null
+        : null;
+  }
   if (!item) return null;
-  const highlighted = isHovered || isSelected;
+  const highlighted = !override && (isHovered || isSelected);
   return (
     <div
       ref={ref}

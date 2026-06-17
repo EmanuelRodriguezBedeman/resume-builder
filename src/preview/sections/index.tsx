@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { useStore } from "../../store.ts";
+import { sectionById, usePreviewSource } from "../previewSource.tsx";
 import { CategorizedTagsSection } from "./CategorizedTagsSection.tsx";
 import { CompactGridSection } from "./CompactGridSection.tsx";
 import { ShowcaseSection } from "./ShowcaseSection.tsx";
@@ -13,7 +14,8 @@ export const SectionRenderer = memo(function SectionRenderer({
 }: {
   sectionId: string;
 }) {
-  const dispatchKey = useStore((s) => {
+  const override = usePreviewSource();
+  const storeDispatchKey = useStore((s) => {
     if (s.state.status !== "loaded") return null;
     const section = s.state.locales[s.activeLocale].sections.find(
       (sec) => sec.id === sectionId,
@@ -21,6 +23,12 @@ export const SectionRenderer = memo(function SectionRenderer({
     if (!section || section.hidden) return null;
     return section.type;
   });
+  const dispatchKey = override
+    ? (() => {
+        const section = sectionById(override.resume, sectionId);
+        return !section || section.hidden ? null : section.type;
+      })()
+    : storeDispatchKey;
   if (!dispatchKey) return null;
   switch (dispatchKey) {
     case "timeline":

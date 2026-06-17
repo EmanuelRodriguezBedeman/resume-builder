@@ -3,6 +3,7 @@ import { useShallow } from "zustand/react/shallow";
 import { useStore } from "../store.ts";
 import { Header } from "./Header.tsx";
 import { SectionRenderer } from "./sections/index.tsx";
+import { usePreviewSource } from "./previewSource.tsx";
 
 // A4 dimensions in PostScript points (1pt = 1/72 inch). React-PDF's page
 // uses the same coordinate space, so sticking with pt for every measurement
@@ -41,13 +42,17 @@ const pageStyle: CSSProperties = {
 // changes (add / remove / reorder). Edits inside a section don't reach
 // this component — each section / item self-subscribes too.
 export const HtmlPreview = memo(function HtmlPreview() {
-  const sectionIds = useStore(
+  const override = usePreviewSource();
+  const storeSectionIds = useStore(
     useShallow((s) =>
       s.state.status === "loaded"
         ? s.state.locales[s.activeLocale].sections.map((sec) => sec.id)
         : [],
     ),
   );
+  const sectionIds = override
+    ? override.resume.sections.map((sec) => sec.id)
+    : storeSectionIds;
   return (
     <div style={scrollContainerStyle}>
       <div style={pageStyle}>
