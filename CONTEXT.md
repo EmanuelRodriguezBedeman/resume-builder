@@ -1,6 +1,6 @@
 # Resume Builder
 
-A personal web app for editing a CV that matches the format of the user's existing CV PDFs (in `Resumes/`) and exports them as PDF. Replaces the user's prior Canva-based workflow, which was slow and tedious for iterative edits.
+A personal web app for editing a CV that matches the format of the user's existing CV PDFs (in `docs/reference/source-cv/`) and exports them as PDF. Replaces the user's prior Canva-based workflow, which was slow and tedious for iterative edits.
 
 ## Language
 

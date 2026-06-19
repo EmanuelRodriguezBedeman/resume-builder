@@ -7,7 +7,7 @@
     "local": {
       "source": {
         "source": "directory",
-        "path": "./claude-skills"
+        "path": "./.claude/plugins/mattpocock-skills"
       }
     }
   }

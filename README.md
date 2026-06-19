@@ -90,7 +90,7 @@ Click **Export PDF** in the top-right of the toolbar. The browser downloads a PD
 
 - **Port already in use** (`EADDRINUSE`) — another process is on `8787` or `5173`. Kill it (`taskkill /F /PID …` on Windows, `kill …` elsewhere) and retry.
 - **Backend not reachable** in the browser — confirm both `npm run dev` log lines appeared. Vite proxies `/resume` and `/health` to the backend; if the backend crashed, the proxy returns errors.
-- **Slash commands missing** (`/grill-me`, `/to-prd`, etc.) in Claude Code — that's the local plugin in `claude-skills/`. After cloning or moving the folder, restart Claude Code so the marketplace cache refreshes.
+- **Slash commands missing** (`/grill-me`, `/to-prd`, etc.) in Claude Code — that's the local plugin in `.claude/plugins/mattpocock-skills/`. After cloning or moving the folder, restart Claude Code so the marketplace cache refreshes.
 
 ## How it works
 
@@ -109,18 +109,21 @@ The live preview in `src/preview/` and the PDF export in `src/pdf/` are intentio
 
 ```
 /
-├── .claude/               Claude Code config (local plugin marketplace)
+├── .claude/               Claude Code config + tooling
+│   ├── settings.json      Plugin marketplace registration
+│   └── plugins/
+│       └── mattpocock-skills/   Matt Pocock's skill plugin — Claude tooling, not app code
 ├── CLAUDE.md              Project instructions for Claude Code
 ├── CONTEXT.md             Domain glossary (Resume, Section, Item, the 5 Section types)
-├── claude-skills/         Matt Pocock's skill plugin — Claude Code tooling, not app code
 ├── data/
 │   └── resume.json        Single source of truth for the CV
 ├── docs/
 │   ├── adr/               Architecture decision records
 │   │   ├── 0002-pdf-rendering-via-react-pdf.md
 │   │   └── 0003-dual-render-html-preview-pdf-export.md
-│   └── agents/            Claude agent configuration (issue tracker, triage, domain)
-├── Resumes/               Original PDF templates used as the visual target
+│   ├── agents/            Claude agent configuration (issue tracker, triage, domain)
+│   └── reference/
+│       └── source-cv/     Original PDF templates used as the visual target
 ├── server/                Hono backend
 │   ├── app.ts             createApp factory — injectable data path for testability
 │   ├── index.ts           Production entry that wires the app to data/resume.json
@@ -142,6 +145,6 @@ The live preview in `src/preview/` and the PDF export in `src/pdf/` are intentio
 
 ## Background
 
-The visual style and the catalog of five `Section` types (Timeline, Compact grid, Showcase, Categorized tags, plus the special Header) were derived from the user's actual Canva-built CV (in `Resumes/Latest/`). The vocabulary in `CONTEXT.md` and the discriminated union in `src/types.ts` reflect that source.
+The visual style and the catalog of five `Section` types (Timeline, Compact grid, Showcase, Categorized tags, plus the special Header) were derived from the user's actual Canva-built CV (in `docs/reference/source-cv/Latest/`). The vocabulary in `CONTEXT.md` and the discriminated union in `src/types.ts` reflect that source.
 
-The project was built incrementally through three phases (risk validation → MVP edit → full CRUD) plus a follow-up phase that swapped the PDF preview for a parallel DOM preview ([ADR-0003](docs/adr/0003-dual-render-html-preview-pdf-export.md)). The slicing and writeup were driven through Matt Pocock's [skills repo](https://github.com/mattpocock/skills) — its `/grill-with-docs`, `/to-prd`, and `/to-issues` commands produced the domain glossary, the ADRs, and the GitHub issue series that tracked the work. That tooling lives in `claude-skills/` and is registered as a local Claude Code plugin via `.claude/settings.json`.
+The project was built incrementally through three phases (risk validation → MVP edit → full CRUD) plus a follow-up phase that swapped the PDF preview for a parallel DOM preview ([ADR-0003](docs/adr/0003-dual-render-html-preview-pdf-export.md)). The slicing and writeup were driven through Matt Pocock's [skills repo](https://github.com/mattpocock/skills) — its `/grill-with-docs`, `/to-prd`, and `/to-issues` commands produced the domain glossary, the ADRs, and the GitHub issue series that tracked the work. That tooling lives in `.claude/plugins/mattpocock-skills/` and is registered as a local Claude Code plugin via `.claude/settings.json`.

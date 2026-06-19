@@ -2,7 +2,7 @@
 
 Personal web app for editing a CV that mirrors the user's existing PDF format and exports it through React-PDF. See [`CONTEXT.md`](./CONTEXT.md) for the domain glossary and [`docs/adr/`](./docs/adr/) for architectural decisions.
 
-The `claude-skills/` directory holds Matt Pocock's skill plugin (sourced from `mattpocock/skills` on GitHub), registered as a local marketplace via `.claude/settings.json`. Those files are tooling for Claude Code, not Resume Builder code.
+The `.claude/plugins/mattpocock-skills/` directory holds Matt Pocock's skill plugin (sourced from `mattpocock/skills` on GitHub), registered as a local marketplace via `.claude/settings.json`. Those files are tooling for Claude Code, not Resume Builder code.
 
 ## Agent skills
 
